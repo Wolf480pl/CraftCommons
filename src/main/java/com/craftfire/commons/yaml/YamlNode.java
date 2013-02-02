@@ -19,65 +19,157 @@
  */
 package com.craftfire.commons.yaml;
 
-import java.security.PublicKey;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Blob;
+import java.util.Date;
 
-public class YamlNode {
-    private String node;
-    private Object data;
+import com.craftfire.commons.util.ValueHolder;
+import com.craftfire.commons.util.ValueHolderBase;
+import com.craftfire.commons.util.ValueType;
 
-    public YamlNode(String node, Object data) {
-        this.node = node;
-        this.data = data;
+public class YamlNode implements ValueHolder {
+    private ValueHolder holder;
+    private String[] path;
+
+    public YamlNode(String[] path, Object data) {
+        this.holder = new ValueHolderBase(path[path.length - 1], false, data);
+        this.path = path;
     }
 
-    public String getNode() {
-        return this.node;
+    public String[] getPathElements() {
+        return this.path;
     }
 
-    public void setNode(String node) {
-        this.node = node;
+    public void setValue(Object data) {
+        this.holder = new ValueHolderBase(this.holder.getName(), false, data);
     }
 
-    public void set(Object data) {
-        this.data = data;
+    /* (non-Javadoc)
+     * @see com.craftfire.commons.util.ValueHolder#getName()
+     */
+    @Override
+    public String getName() {
+        return this.holder.getName();
     }
 
-    public Object getObject() {
-        return this.data;
+    /* (non-Javadoc)
+     * @see com.craftfire.commons.util.ValueHolder#getType()
+     */
+    @Override
+    public ValueType getType() {
+        return this.holder.getType();
     }
 
+    /* (non-Javadoc)
+     * @see com.craftfire.commons.util.ValueHolder#getObject()
+     */
+    @Override
+    public Object getValue() {
+        return this.holder.getValue();
+    }
+
+    /* (non-Javadoc)
+     * @see com.craftfire.commons.util.ValueHolder#getString()
+     */
+    @Override
     public String getString() {
-        if (this.data instanceof String) {
-            return (String) this.data;
-        }
-        return null;
+        return this.holder.getString();
     }
 
-    public boolean getBoolean() {
-        if (this.data instanceof Boolean) {
-            return (Boolean) this.data;
-        }
-        return false;
-    }
-
+    /* (non-Javadoc)
+     * @see com.craftfire.commons.util.ValueHolder#getInt()
+     */
+    @Override
     public int getInt() {
-        if (this.data instanceof Integer) {
-            return (Integer) this.data;
-        }
-        return 0;
+        return this.holder.getInt();
     }
 
-    public double getDouble() {
-        if (this.data instanceof Double) {
-            return (Double) this.data;
-        }
-        return 0;
-    }
-
+    /* (non-Javadoc)
+     * @see com.craftfire.commons.util.ValueHolder#getLong()
+     */
+    @Override
     public long getLong() {
-        if (this.data instanceof Long) {
-            return (Long) this.data;
-        }
-        return 0;
+        return this.holder.getLong();
+    }
+
+    /* (non-Javadoc)
+     * @see com.craftfire.commons.util.ValueHolder#getBigInt()
+     */
+    @Override
+    public BigInteger getBigInt() {
+        return this.holder.getBigInt();
+    }
+
+    /* (non-Javadoc)
+     * @see com.craftfire.commons.util.ValueHolder#getDouble()
+     */
+    @Override
+    public double getDouble() {
+        return this.holder.getDouble();
+    }
+
+    /* (non-Javadoc)
+     * @see com.craftfire.commons.util.ValueHolder#getFloat()
+     */
+    @Override
+    public float getFloat() {
+        return this.holder.getFloat();
+    }
+
+    /* (non-Javadoc)
+     * @see com.craftfire.commons.util.ValueHolder#getDecimal()
+     */
+    @Override
+    public BigDecimal getDecimal() {
+        return this.holder.getDecimal();
+    }
+
+    /* (non-Javadoc)
+     * @see com.craftfire.commons.util.ValueHolder#getBytes()
+     */
+    @Override
+    public byte[] getBytes() {
+        return this.holder.getBytes();
+    }
+
+    /* (non-Javadoc)
+     * @see com.craftfire.commons.util.ValueHolder#getDate()
+     */
+    @Override
+    public Date getDate() {
+        return this.holder.getDate();
+    }
+
+    /* (non-Javadoc)
+     * @see com.craftfire.commons.util.ValueHolder#getBlob()
+     */
+    @Override
+    public Blob getBlob() {
+        return this.holder.getBlob();
+    }
+
+    /* (non-Javadoc)
+     * @see com.craftfire.commons.util.ValueHolder#getBool()
+     */
+    @Override
+    public boolean getBool() {
+        return this.holder.getBool();
+    }
+
+    /* (non-Javadoc)
+     * @see com.craftfire.commons.util.ValueHolder#isNull()
+     */
+    @Override
+    public boolean isNull() {
+        return this.holder.isNull();
+    }
+
+    /* (non-Javadoc)
+     * @see com.craftfire.commons.util.ValueHolder#isUnsigned()
+     */
+    @Override
+    public boolean isUnsigned() {
+        return this.holder.isUnsigned();
     }
 }

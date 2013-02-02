@@ -12,7 +12,6 @@ import java.util.Date;
 public class ValueHolderBase implements ValueHolder {
 
     protected final String name;
-    protected final int size;
     protected final Object value;
     protected final ValueType type;
     protected final boolean unsigned;
@@ -72,34 +71,33 @@ public class ValueHolderBase implements ValueHolder {
         }
     }
 
-    public ValueHolderBase(int size, Object data) {
-        this(size, false, data);
+    public ValueHolderBase(Object data) {
+        this(false, data);
     }
 
-    public ValueHolderBase(ValueType type, int size, Object data) {
-        this(type, size, false, data);
+    public ValueHolderBase(ValueType type, Object data) {
+        this(type, false, data);
     }
 
-    public ValueHolderBase(int size, boolean unsigned, Object data) {
-        this("", size, unsigned, data);
+    public ValueHolderBase(boolean unsigned, Object data) {
+        this("", unsigned, data);
     }
 
-    public ValueHolderBase(ValueType type, int size, boolean unsigned, Object data) {
-        this(type, "", size, unsigned, data);
+    public ValueHolderBase(ValueType type, boolean unsigned, Object data) {
+        this(type, "", unsigned, data);
     }
 
-    public ValueHolderBase(String name, int size, boolean unsigned, Object data) {
-        this(typeDetect(data), name, size, unsigned, data);
+    public ValueHolderBase(String name, boolean unsigned, Object data) {
+        this(typeDetect(data), name, unsigned, data);
     }
 
-    public ValueHolderBase(ValueType type, String name, int size, boolean unsigned, Object data) {
+    public ValueHolderBase(ValueType type, String name, boolean unsigned, Object data) {
         if (data == null) {
             this.type = ValueType.NULL;
         } else {
             this.type = type;
         }
         this.name = name;
-        this.size = size;
         this.unsigned = unsigned;
         this.value = data;
         typeCheck();
@@ -122,18 +120,10 @@ public class ValueHolderBase implements ValueHolder {
     }
 
     /* (non-Javadoc)
-     * @see com.craftfire.commons.database.IValueHolder#getFieldSize()
-     */
-    @Override
-    public int getSize() {
-        return this.size;
-    }
-
-    /* (non-Javadoc)
      * @see com.craftfire.commons.database.IValueHolder#getData()
      */
     @Override
-    public Object getObject() {
+    public Object getValue() {
         return this.value;
     }
 
@@ -404,8 +394,7 @@ public class ValueHolderBase implements ValueHolder {
 
     @Override
     public String toString() {
-        return "ValueHolder " + getType().name() + "(" + this.size
-                + ") " + this.name + " = " + this.value;
+        return "ValueHolder " + getType().name() + " " + this.name + " = " + this.value;
     }
 
 }

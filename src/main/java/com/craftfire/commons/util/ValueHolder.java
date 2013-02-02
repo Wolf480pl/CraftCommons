@@ -11,9 +11,7 @@ public interface ValueHolder {
 
     ValueType getType();
 
-    int getSize();
-
-    Object getObject();
+    Object getValue();
 
     String getString();
 

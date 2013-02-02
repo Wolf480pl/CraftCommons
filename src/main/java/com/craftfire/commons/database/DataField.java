@@ -28,43 +28,46 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Date;
 
-import com.craftfire.commons.util.ValueType;
 import com.craftfire.commons.util.ValueHolder;
 import com.craftfire.commons.util.ValueHolderBase;
+import com.craftfire.commons.util.ValueType;
 
 public class DataField implements ValueHolder {
     private final String table /* , type */;
-    private final int sqltype;
+    private final int sqltype, size;
     private final ValueHolder holder;
 
     public DataField(int column, ResultSetMetaData metaData, Object data) throws SQLException {
-        int size = metaData.getColumnDisplaySize(column);
-        ValueType vtype = sqlTypeParse(this.sqltype, size, data);
+        this.size = metaData.getColumnDisplaySize(column);
+        ValueType vtype = sqlTypeParse(this.sqltype, this.size, data);
         String name = metaData.getColumnLabel(column);
         boolean unsigned = metaData.getColumnTypeName(column).contains("UNSIGNED");
-        this.holder = new ValueHolderBase(vtype, name, size, unsigned, data);
+        this.holder = new ValueHolderBase(vtype, name, unsigned, data);
         this.sqltype = metaData.getColumnType(column);
         this.table = metaData.getTableName(column);
     }
 
     public DataField(ValueType type, int size, Object value) {
+        this.holder = new ValueHolderBase(type, value);
         this.sqltype = Types.NULL;
         this.table = "";
-        this.holder = new ValueHolderBase(type, size, value);
+        this.size = size;
     }
 
     public DataField(String name, String table, int size, boolean unsigned,
             Object data) {
-        this.holder = new ValueHolderBase(name, size, unsigned, data);
+        this.holder = new ValueHolderBase(name, unsigned, data);
         this.sqltype = Types.NULL;
         this.table = table;
+        this.size = size;
     }
 
     public DataField(ValueType type, String name, String table, int size,
             boolean unsigned, Object data) {
-        this.holder = new ValueHolderBase(type, name, size, unsigned, data);
+        this.holder = new ValueHolderBase(type, name, unsigned, data);
         this.sqltype = Types.NULL;
         this.table = table;
+        this.size = size;
     }
 
     public DataField(int column, ResultSet resultset) throws SQLException {
@@ -82,8 +85,9 @@ public class DataField implements ValueHolder {
         boolean unsigned = metaData.getColumnTypeName(column).contains("UNSIGNED");
         ValueType vtype = sqlTypeParse(this.sqltype, size, data, resultset.wasNull());
         String name = metaData.getColumnLabel(column);
-        this.holder = new ValueHolderBase(vtype, name, size, unsigned, data);
+        this.holder = new ValueHolderBase(vtype, name, unsigned, data);
         this.table = metaData.getTableName(column);
+        this.size = size;
     }
 
     private static ValueType sqlTypeParse(int sqltype, int size, Object data, boolean wasNull) {
@@ -150,10 +154,14 @@ public class DataField implements ValueHolder {
         return this.table;
     }
 
+    public int getSize() {
+        return this.size;
+    }
+
     @Override
     public String toString() {
-        return "DataField " + getType().name() + "(" + this.holder.getSize()
-                + ") " + this.holder.getName() + " = " + this.holder.getObject();
+        return "DataField " + getType().name() + "(" + this.size
+                + ") " + this.holder.getName() + " = " + this.holder.getValue();
     }
 
     @Override
@@ -167,13 +175,8 @@ public class DataField implements ValueHolder {
     }
 
     @Override
-    public int getSize() {
-        return this.holder.getSize();
-    }
-
-    @Override
-    public Object getObject() {
-        return this.holder.getObject();
+    public Object getValue() {
+        return this.holder.getValue();
     }
 
     @Override
