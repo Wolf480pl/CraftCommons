@@ -1,4 +1,4 @@
-package com.craftfire.commons.database;
+package com.craftfire.commons.util;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -7,13 +7,13 @@ import java.util.Date;
 
 public interface ValueHolder {
 
-    String getFieldName();
+    String getName();
 
-    FieldType getFieldType();
+    ValueType getType();
 
-    int getFieldSize();
+    int getSize();
 
-    Object getData();
+    Object getObject();
 
     String getString();
 

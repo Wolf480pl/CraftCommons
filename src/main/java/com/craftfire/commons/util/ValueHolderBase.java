@@ -1,4 +1,4 @@
-package com.craftfire.commons.database;
+package com.craftfire.commons.util;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -13,60 +13,60 @@ public class ValueHolderBase implements ValueHolder {
 
     protected final String name;
     protected final int size;
-    protected final Object data;
-    protected final FieldType ftype;
+    protected final Object value;
+    protected final ValueType type;
     protected final boolean unsigned;
 
-    protected static FieldType typeDetect(Object data) {
+    protected static ValueType typeDetect(Object data) {
         if (data == null) {
-            return FieldType.NULL;
+            return ValueType.NULL;
         } else if (data instanceof String) {
-            return FieldType.STRING;
+            return ValueType.STRING;
         } else if (data instanceof Number) {
             if (((Number) data).doubleValue() == ((Number) data).longValue()) {
-                return FieldType.INTEGER;
+                return ValueType.INTEGER;
             } else {
-                return FieldType.REAL;
+                return ValueType.REAL;
             }
         } else if (data instanceof Date) {
-            return FieldType.DATE;
+            return ValueType.DATE;
         } else if (data instanceof Blob) {
-            return FieldType.BLOB;
+            return ValueType.BLOB;
         } else if (data instanceof byte[]) {
-            return FieldType.BINARY;
+            return ValueType.BINARY;
         } else if (data instanceof Boolean) {
-            return FieldType.BOOLEAN;
+            return ValueType.BOOLEAN;
         }
         //TODO: DataManager.getLogManager().warning("Unknown data type: " + data.toString());
-        return FieldType.UNKNOWN;
+        return ValueType.UNKNOWN;
     }
 
     protected void typeCheck() {
         IllegalArgumentException e = new IllegalArgumentException("Data: "
-                + this.data.toString() + " doesn't match the type: "
-                + this.ftype.name());
-        if (this.ftype.equals(FieldType.STRING)) {
-            if (!(this.data instanceof String)) {
+                + this.value + " doesn't match the type: "
+                + this.type.name());
+        if (this.type.equals(ValueType.STRING)) {
+            if (!(this.value instanceof String)) {
                 throw e;
             }
-        } else if (this.ftype.equals(FieldType.INTEGER) || this.ftype.equals(FieldType.REAL)) {
-            if (!(this.data instanceof Number)) {
+        } else if (this.type.equals(ValueType.INTEGER) || this.type.equals(ValueType.REAL)) {
+            if (!(this.value instanceof Number)) {
                 throw e;
             }
-        } else if (this.ftype.equals(FieldType.DATE)) {
-            if (!(this.data instanceof Date)) {
+        } else if (this.type.equals(ValueType.DATE)) {
+            if (!(this.value instanceof Date)) {
                 throw e;
             }
-        } else if (this.ftype.equals(FieldType.BLOB)) {
-            if (!(this.data instanceof Blob)) {
+        } else if (this.type.equals(ValueType.BLOB)) {
+            if (!(this.value instanceof Blob)) {
                 throw e;
             }
-        } else if (this.ftype.equals(FieldType.BINARY)) {
-            if (!(this.data instanceof byte[])) {
+        } else if (this.type.equals(ValueType.BINARY)) {
+            if (!(this.value instanceof byte[])) {
                 throw e;
             }
-        } else if (this.ftype.equals(FieldType.BOOLEAN)) {
-            if (!(this.data instanceof Boolean)) {
+        } else if (this.type.equals(ValueType.BOOLEAN)) {
+            if (!(this.value instanceof Boolean)) {
                 throw e;
             }
         }
@@ -76,7 +76,7 @@ public class ValueHolderBase implements ValueHolder {
         this(size, false, data);
     }
 
-    public ValueHolderBase(FieldType type, int size, Object data) {
+    public ValueHolderBase(ValueType type, int size, Object data) {
         this(type, size, false, data);
     }
 
@@ -84,7 +84,7 @@ public class ValueHolderBase implements ValueHolder {
         this("", size, unsigned, data);
     }
 
-    public ValueHolderBase(FieldType type, int size, boolean unsigned, Object data) {
+    public ValueHolderBase(ValueType type, int size, boolean unsigned, Object data) {
         this(type, "", size, unsigned, data);
     }
 
@@ -92,16 +92,16 @@ public class ValueHolderBase implements ValueHolder {
         this(typeDetect(data), name, size, unsigned, data);
     }
 
-    public ValueHolderBase(FieldType type, String name, int size, boolean unsigned, Object data) {
+    public ValueHolderBase(ValueType type, String name, int size, boolean unsigned, Object data) {
         if (data == null) {
-            this.ftype = FieldType.NULL;
+            this.type = ValueType.NULL;
         } else {
-            this.ftype = type;
+            this.type = type;
         }
         this.name = name;
         this.size = size;
         this.unsigned = unsigned;
-        this.data = data;
+        this.value = data;
         typeCheck();
     }
 
@@ -109,7 +109,7 @@ public class ValueHolderBase implements ValueHolder {
      * @see com.craftfire.commons.database.IValueHolder#getFieldName()
      */
     @Override
-    public String getFieldName() {
+    public String getName() {
         return this.name;
     }
 
@@ -117,15 +117,15 @@ public class ValueHolderBase implements ValueHolder {
      * @see com.craftfire.commons.database.IValueHolder#getFieldType()
      */
     @Override
-    public FieldType getFieldType() {
-        return this.ftype;
+    public ValueType getType() {
+        return this.type;
     }
 
     /* (non-Javadoc)
      * @see com.craftfire.commons.database.IValueHolder#getFieldSize()
      */
     @Override
-    public int getFieldSize() {
+    public int getSize() {
         return this.size;
     }
 
@@ -133,8 +133,8 @@ public class ValueHolderBase implements ValueHolder {
      * @see com.craftfire.commons.database.IValueHolder#getData()
      */
     @Override
-    public Object getData() {
-        return this.data;
+    public Object getObject() {
+        return this.value;
     }
 
     /* (non-Javadoc)
@@ -142,13 +142,13 @@ public class ValueHolderBase implements ValueHolder {
      */
     @Override
     public String getString() {
-        if (getFieldType().equals(FieldType.STRING)) {
-            return (String) this.data;
-        } else if (getFieldType().equals(FieldType.BINARY)
-                || getFieldType().equals(FieldType.BLOB)) {
+        if (getType().equals(ValueType.STRING)) {
+            return (String) this.value;
+        } else if (getType().equals(ValueType.BINARY)
+                || getType().equals(ValueType.BLOB)) {
             return new String(getBytes());
         }
-        return this.data.toString();
+        return this.value.toString();
     }
 
     /* (non-Javadoc)
@@ -164,15 +164,15 @@ public class ValueHolderBase implements ValueHolder {
      */
     @Override
     public long getLong() {
-        if (getFieldType().equals(FieldType.INTEGER)
-                || getFieldType().equals(FieldType.REAL)) {
-            return ((Number) this.data).longValue();
-        } else if (getFieldType().equals(FieldType.BOOLEAN)) {
-            return ((Boolean) this.data).booleanValue() ? 1 : 0;
-        } else if (getFieldType().equals(FieldType.DATE)) {
-            return ((Date) this.data).getTime();
-        } else if (getFieldType().equals(FieldType.BINARY)
-                || getFieldType().equals(FieldType.BLOB)) {
+        if (getType().equals(ValueType.INTEGER)
+                || getType().equals(ValueType.REAL)) {
+            return ((Number) this.value).longValue();
+        } else if (getType().equals(ValueType.BOOLEAN)) {
+            return ((Boolean) this.value).booleanValue() ? 1 : 0;
+        } else if (getType().equals(ValueType.DATE)) {
+            return ((Date) this.value).getTime();
+        } else if (getType().equals(ValueType.BINARY)
+                || getType().equals(ValueType.BLOB)) {
             byte[] bytes = { 0, 0, 0, 0, 0, 0, 0, 0 };
             byte[] bytes1 = getBytes();
             if (bytes1.length >= 8) {
@@ -182,9 +182,9 @@ public class ValueHolderBase implements ValueHolder {
                         bytes1.length);
             }
             return ByteBuffer.wrap(bytes).getLong();
-        } else if (getFieldType().equals(FieldType.STRING)) {
+        } else if (getType().equals(ValueType.STRING)) {
             try {
-                return Long.parseLong((String) this.data);
+                return Long.parseLong((String) this.value);
             } catch (NumberFormatException e) {
             }
             return new Double(getDouble()).longValue();
@@ -198,24 +198,24 @@ public class ValueHolderBase implements ValueHolder {
     @Override
     public BigInteger getBigInt() {
         try {
-            if (this.data instanceof BigInteger) {
-                return (BigInteger) this.data;
-            } else if (getFieldType().equals(FieldType.BOOLEAN)) {
-                return ((Boolean) this.data).booleanValue() ? BigInteger.ONE
+            if (this.value instanceof BigInteger) {
+                return (BigInteger) this.value;
+            } else if (getType().equals(ValueType.BOOLEAN)) {
+                return ((Boolean) this.value).booleanValue() ? BigInteger.ONE
                         : BigInteger.ZERO;
-            } else if (getFieldType().equals(FieldType.BINARY)
-                    || getFieldType().equals(FieldType.BLOB)) {
+            } else if (getType().equals(ValueType.BINARY)
+                    || getType().equals(ValueType.BLOB)) {
                 byte[] bytes = getBytes();
                 return new BigInteger(bytes);
-            } else if (getFieldType().equals(FieldType.STRING)) {
-                return new BigInteger(this.data.toString());
+            } else if (getType().equals(ValueType.STRING)) {
+                return new BigInteger(this.value.toString());
             } else {
                 long l = 0;
-                if (getFieldType().equals(FieldType.INTEGER)
-                        || getFieldType().equals(FieldType.REAL)) {
-                    l = ((Number) this.data).longValue();
-                } else if (getFieldType().equals(FieldType.DATE)) {
-                    l = ((Date) this.data).getTime();
+                if (getType().equals(ValueType.INTEGER)
+                        || getType().equals(ValueType.REAL)) {
+                    l = ((Number) this.value).longValue();
+                } else if (getType().equals(ValueType.DATE)) {
+                    l = ((Date) this.value).getTime();
                 } else {
                     return null;
                 }
@@ -231,15 +231,15 @@ public class ValueHolderBase implements ValueHolder {
      */
     @Override
     public double getDouble() {
-        if (getFieldType().equals(FieldType.INTEGER)
-                || getFieldType().equals(FieldType.REAL)) {
-            return ((Number) this.data).doubleValue();
-        } else if (getFieldType().equals(FieldType.BOOLEAN)) {
-            return ((Boolean) this.data).booleanValue() ? 1 : 0;
-        } else if (getFieldType().equals(FieldType.DATE)) {
-            return new Long(((Date) this.data).getTime()).doubleValue();
-        } else if (getFieldType().equals(FieldType.BINARY)
-                || getFieldType().equals(FieldType.BLOB)) {
+        if (getType().equals(ValueType.INTEGER)
+                || getType().equals(ValueType.REAL)) {
+            return ((Number) this.value).doubleValue();
+        } else if (getType().equals(ValueType.BOOLEAN)) {
+            return ((Boolean) this.value).booleanValue() ? 1 : 0;
+        } else if (getType().equals(ValueType.DATE)) {
+            return new Long(((Date) this.value).getTime()).doubleValue();
+        } else if (getType().equals(ValueType.BINARY)
+                || getType().equals(ValueType.BLOB)) {
             byte[] bytes = { 0, 0, 0, 0, 0, 0, 0, 0 };
             byte[] bytes1 = getBytes();
             if (bytes1.length >= 8) {
@@ -249,13 +249,13 @@ public class ValueHolderBase implements ValueHolder {
                         bytes1.length);
             }
             return ByteBuffer.wrap(bytes).getLong();
-        } else if (getFieldType().equals(FieldType.STRING)) {
+        } else if (getType().equals(ValueType.STRING)) {
             try {
-                return Double.parseDouble((String) this.data);
+                return Double.parseDouble((String) this.value);
             } catch (NumberFormatException e) {
             }
             try {
-                return Double.parseDouble(((String) this.data)
+                return Double.parseDouble(((String) this.value)
                         .replace(',', '.'));
             } catch (NumberFormatException e) {
                 e.getCause();
@@ -278,18 +278,18 @@ public class ValueHolderBase implements ValueHolder {
     @Override
     public BigDecimal getDecimal() {
         try {
-            if (this.data instanceof BigDecimal) {
-                return (BigDecimal) this.data;
-            } else if (getFieldType().equals(FieldType.BOOLEAN)) {
-                return ((Boolean) this.data).booleanValue() ? BigDecimal.ONE
+            if (this.value instanceof BigDecimal) {
+                return (BigDecimal) this.value;
+            } else if (getType().equals(ValueType.BOOLEAN)) {
+                return ((Boolean) this.value).booleanValue() ? BigDecimal.ONE
                         : BigDecimal.ZERO;
-            } else if (getFieldType().equals(FieldType.STRING)) {
-                return new BigDecimal(this.data.toString());
-            } else if (getFieldType().equals(FieldType.INTEGER)
-                    || getFieldType().equals(FieldType.REAL)) {
-                return new BigDecimal(((Number) this.data).doubleValue());
-            } else if (getFieldType().equals(FieldType.DATE)) {
-                return new BigDecimal(((Date) this.data).getTime());
+            } else if (getType().equals(ValueType.STRING)) {
+                return new BigDecimal(this.value.toString());
+            } else if (getType().equals(ValueType.INTEGER)
+                    || getType().equals(ValueType.REAL)) {
+                return new BigDecimal(((Number) this.value).doubleValue());
+            } else if (getType().equals(ValueType.DATE)) {
+                return new BigDecimal(((Date) this.value).getTime());
             }
         } catch (NumberFormatException e) {
         }
@@ -301,25 +301,25 @@ public class ValueHolderBase implements ValueHolder {
      */
     @Override
     public byte[] getBytes() {
-        if (getFieldType().equals(FieldType.BINARY)) {
-            return (byte[]) this.data;
-        } else if (getFieldType().equals(FieldType.BLOB)) {
+        if (getType().equals(ValueType.BINARY)) {
+            return (byte[]) this.value;
+        } else if (getType().equals(ValueType.BLOB)) {
             try {
-                return ((Blob) this.data).getBytes(1,
-                        (int) ((Blob) this.data).length());
+                return ((Blob) this.value).getBytes(1,
+                        (int) ((Blob) this.value).length());
             } catch (SQLException e) {
                 e.getClass();
             }
-        } else if (getFieldType().equals(FieldType.BOOLEAN)) {
+        } else if (getType().equals(ValueType.BOOLEAN)) {
             return ByteBuffer.allocate(1)
-                    .put((byte) (((Boolean) this.data).booleanValue() ? 1 : 0))
+                    .put((byte) (((Boolean) this.value).booleanValue() ? 1 : 0))
                     .array();
-        } else if (getFieldType().equals(FieldType.INTEGER)) {
+        } else if (getType().equals(ValueType.INTEGER)) {
             return ByteBuffer.allocate(8).putLong(getLong()).array();
-        } else if (getFieldType().equals(FieldType.REAL)) {
+        } else if (getType().equals(ValueType.REAL)) {
             return ByteBuffer.allocate(8).putDouble(getDouble()).array();
-        } else if (getFieldType().equals(FieldType.STRING)) {
-            return this.data.toString().getBytes();
+        } else if (getType().equals(ValueType.STRING)) {
+            return this.value.toString().getBytes();
         }
         return null;
     }
@@ -329,26 +329,26 @@ public class ValueHolderBase implements ValueHolder {
      */
     @Override
     public Date getDate() {
-        if (getFieldType().equals(FieldType.DATE)) {
-            return (Date) this.data;
-        } else if (getFieldType().equals(FieldType.INTEGER)) {
+        if (getType().equals(ValueType.DATE)) {
+            return (Date) this.value;
+        } else if (getType().equals(ValueType.INTEGER)) {
             return new Date(getLong());
-        } else if (getFieldType().equals(FieldType.STRING)) {
+        } else if (getType().equals(ValueType.STRING)) {
             try {
-                return DateFormat.getDateInstance().parse((String) this.data);
+                return DateFormat.getDateInstance().parse((String) this.value);
             } catch (ParseException e) {
             }
             try {
                 return DateFormat.getDateTimeInstance().parse(
-                        (String) this.data);
+                        (String) this.value);
             } catch (ParseException e) {
             }
             try {
-                return DateFormat.getTimeInstance().parse((String) this.data);
+                return DateFormat.getTimeInstance().parse((String) this.value);
             } catch (ParseException e) {
             }
             try {
-                return DateFormat.getInstance().parse((String) this.data);
+                return DateFormat.getInstance().parse((String) this.value);
             } catch (ParseException e) {
             }
         }
@@ -360,8 +360,8 @@ public class ValueHolderBase implements ValueHolder {
      */
     @Override
     public Blob getBlob() {
-        if (getFieldType().equals(FieldType.BLOB)) {
-            return (Blob) this.data;
+        if (getType().equals(ValueType.BLOB)) {
+            return (Blob) this.value;
         }
         return null;
     }
@@ -371,15 +371,15 @@ public class ValueHolderBase implements ValueHolder {
      */
     @Override
     public boolean getBool() {
-        if (getFieldType().equals(FieldType.BOOLEAN)) {
-            return (Boolean) this.data;
-        } else if (getFieldType().equals(FieldType.INTEGER)
-                || getFieldType().equals(FieldType.REAL)
-                || getFieldType().equals(FieldType.DATE)) {
+        if (getType().equals(ValueType.BOOLEAN)) {
+            return (Boolean) this.value;
+        } else if (getType().equals(ValueType.INTEGER)
+                || getType().equals(ValueType.REAL)
+                || getType().equals(ValueType.DATE)) {
             return getLong() != 0;
-        } else if (getFieldType().equals(FieldType.BINARY)
-                || getFieldType().equals(FieldType.BLOB)
-                || getFieldType().equals(FieldType.STRING)) {
+        } else if (getType().equals(ValueType.BINARY)
+                || getType().equals(ValueType.BLOB)
+                || getType().equals(ValueType.STRING)) {
             String s = getString();
             return (s != null) && !s.isEmpty();
         }
@@ -391,7 +391,7 @@ public class ValueHolderBase implements ValueHolder {
      */
     @Override
     public boolean isNull() {
-        return getFieldType().equals(FieldType.NULL);
+        return getType().equals(ValueType.NULL);
     }
 
     /* (non-Javadoc)
@@ -404,8 +404,8 @@ public class ValueHolderBase implements ValueHolder {
 
     @Override
     public String toString() {
-        return "ValueHolder " + getFieldType().name() + "(" + this.size
-                + ") " + this.name + " = " + this.data.toString();
+        return "ValueHolder " + getType().name() + "(" + this.size
+                + ") " + this.name + " = " + this.value;
     }
 
 }

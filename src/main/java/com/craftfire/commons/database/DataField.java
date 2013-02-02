@@ -7,7 +7,7 @@
  * CraftCommons is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * (at your option) any later version.78
  *
  * CraftCommons is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -28,6 +28,10 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Date;
 
+import com.craftfire.commons.util.ValueType;
+import com.craftfire.commons.util.ValueHolder;
+import com.craftfire.commons.util.ValueHolderBase;
+
 public class DataField implements ValueHolder {
     private final String table /* , type */;
     private final int sqltype;
@@ -35,15 +39,15 @@ public class DataField implements ValueHolder {
 
     public DataField(int column, ResultSetMetaData metaData, Object data) throws SQLException {
         int size = metaData.getColumnDisplaySize(column);
-        FieldType ftype = sqlTypeParse(this.sqltype, size, data);
+        ValueType vtype = sqlTypeParse(this.sqltype, size, data);
         String name = metaData.getColumnLabel(column);
         boolean unsigned = metaData.getColumnTypeName(column).contains("UNSIGNED");
-        this.holder = new ValueHolderBase(ftype, name, size, unsigned, data);
+        this.holder = new ValueHolderBase(vtype, name, size, unsigned, data);
         this.sqltype = metaData.getColumnType(column);
         this.table = metaData.getTableName(column);
     }
 
-    public DataField(FieldType type, int size, Object value) {
+    public DataField(ValueType type, int size, Object value) {
         this.sqltype = Types.NULL;
         this.table = "";
         this.holder = new ValueHolderBase(type, size, value);
@@ -56,7 +60,7 @@ public class DataField implements ValueHolder {
         this.table = table;
     }
 
-    public DataField(FieldType type, String name, String table, int size,
+    public DataField(ValueType type, String name, String table, int size,
             boolean unsigned, Object data) {
         this.holder = new ValueHolderBase(type, name, size, unsigned, data);
         this.sqltype = Types.NULL;
@@ -76,65 +80,65 @@ public class DataField implements ValueHolder {
         }
         this.sqltype = metaData.getColumnType(column);
         boolean unsigned = metaData.getColumnTypeName(column).contains("UNSIGNED");
-        FieldType ftype = sqlTypeParse(this.sqltype, size, data, resultset.wasNull());
+        ValueType vtype = sqlTypeParse(this.sqltype, size, data, resultset.wasNull());
         String name = metaData.getColumnLabel(column);
-        this.holder = new ValueHolderBase(ftype, name, size, unsigned, data);
+        this.holder = new ValueHolderBase(vtype, name, size, unsigned, data);
         this.table = metaData.getTableName(column);
     }
 
-    private static FieldType sqlTypeParse(int sqltype, int size, Object data, boolean wasNull) {
+    private static ValueType sqlTypeParse(int sqltype, int size, Object data, boolean wasNull) {
         if (wasNull) {
-            return FieldType.NULL;
+            return ValueType.NULL;
         }
         return sqlTypeParse(sqltype, size, data);
     }
 
-    private static FieldType sqlTypeParse(int sqltype, int size, Object data) {
+    private static ValueType sqlTypeParse(int sqltype, int size, Object data) {
         if (data == null) {
-            return FieldType.NULL;
+            return ValueType.NULL;
         }
         switch (sqltype) {
         case Types.CHAR:
         case Types.VARCHAR:
         case Types.LONGVARCHAR:
         case Types.CLOB:
-            return FieldType.STRING;
+            return ValueType.STRING;
         case Types.BLOB:
         case Types.LONGVARBINARY:
-            return FieldType.BLOB;
+            return ValueType.BLOB;
         case Types.BOOLEAN:
-            return FieldType.BOOLEAN;
+            return ValueType.BOOLEAN;
         case Types.BIT:
             if (size <= 1) {
-                return FieldType.BOOLEAN;
+                return ValueType.BOOLEAN;
             }
             /* falls through */
         case Types.BINARY:
         case Types.VARBINARY:
-            return FieldType.BINARY;
+            return ValueType.BINARY;
         case Types.TINYINT:
             if (size <= 1) {
-                return FieldType.BOOLEAN;
+                return ValueType.BOOLEAN;
             }
             /* falls through */
         case Types.SMALLINT:
         case Types.INTEGER:
         case Types.BIGINT:
-            return FieldType.INTEGER;
+            return ValueType.INTEGER;
         case Types.FLOAT:
         case Types.DOUBLE:
         case Types.REAL:
         case Types.DECIMAL:
-            return FieldType.REAL;
+            return ValueType.REAL;
         case Types.DATE:
         case Types.TIMESTAMP:
         case Types.TIME:
-            return FieldType.DATE;
+            return ValueType.DATE;
         case Types.NULL:
-            return FieldType.NULL;
+            return ValueType.NULL;
         default:
             // TODO: DataManager.getLogManager().warning("Unknown SQL type: " + sqltype + " Field data:" + data.toString());
-            return FieldType.UNKNOWN;
+            return ValueType.UNKNOWN;
         }
     }
 
@@ -148,28 +152,28 @@ public class DataField implements ValueHolder {
 
     @Override
     public String toString() {
-        return "DataField " + getFieldType().name() + "(" + this.holder.getFieldSize()
-                + ") " + this.holder.getFieldName() + " = " + this.holder.getData().toString();
+        return "DataField " + getType().name() + "(" + this.holder.getSize()
+                + ") " + this.holder.getName() + " = " + this.holder.getObject();
     }
 
     @Override
-    public String getFieldName() {
-        return this.holder.getFieldName();
+    public String getName() {
+        return this.holder.getName();
     }
 
     @Override
-    public FieldType getFieldType() {
-        return this.holder.getFieldType();
+    public ValueType getType() {
+        return this.holder.getType();
     }
 
     @Override
-    public int getFieldSize() {
-        return this.holder.getFieldSize();
+    public int getSize() {
+        return this.holder.getSize();
     }
 
     @Override
-    public Object getData() {
-        return this.holder.getData();
+    public Object getObject() {
+        return this.holder.getObject();
     }
 
     @Override
