@@ -24,6 +24,7 @@ import java.math.BigInteger;
 import java.sql.Blob;
 import java.util.Date;
 
+import com.craftfire.commons.util.Util;
 import com.craftfire.commons.util.ValueHolder;
 import com.craftfire.commons.util.ValueHolderBase;
 import com.craftfire.commons.util.ValueType;
@@ -31,14 +32,24 @@ import com.craftfire.commons.util.ValueType;
 public class YamlNode implements ValueHolder {
     private ValueHolder holder;
     private String[] path;
+    private YamlManager manager;
 
-    public YamlNode(String[] path, Object data) {
+    public YamlNode(YamlManager manager, String[] path, Object data) {
         this.holder = new ValueHolderBase(path[path.length - 1], false, data);
         this.path = path;
+        this.manager = manager;
+    }
+
+    public YamlManager getYamlManager() {
+        return this.manager;
     }
 
     public String[] getPathElements() {
         return this.path;
+    }
+
+    public String getPath() {
+        return Util.join(this.path, ".");
     }
 
     public void setValue(Object data) {
