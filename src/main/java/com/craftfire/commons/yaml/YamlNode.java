@@ -43,8 +43,15 @@ public class YamlNode implements ValueHolder {
         this.parent = parent;
     }
 
-    public String[] getPathElements() {
-        return getPath().split("\\.");
+    public List<String> getPathElements() {
+        List<String> elements;
+        if (hasParent()) {
+            elements = getParent().getPathElements();
+        } else {
+            elements = new ArrayList<String>();
+        }
+        elements.add(getName());
+        return elements;
     }
 
     public String getPath() {
@@ -133,6 +140,7 @@ public class YamlNode implements ValueHolder {
                 setValue(list);
             }
             list.add(value);
+            clearCache();
             return getChildrenList().get(list.lastIndexOf(value));
         }
         Map<Object, Object> map;
@@ -143,6 +151,7 @@ public class YamlNode implements ValueHolder {
             setValue(map);
         }
         map.put(name, value);
+        clearCache();
         return getChild(name);
     }
 
