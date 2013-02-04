@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -143,7 +145,7 @@ public final class Util {
         }
     }
 
-    public static String join(String[] elements, String separator) {
+    public static String join(Object[] elements, String separator) {
         if (elements == null || elements.length <= 0) {
             return "";
         }
@@ -154,6 +156,21 @@ public final class Util {
             }
             if (elements[i] != null) {
                 builder.append(elements[i]);
+            }
+        }
+        return builder.toString();
+    }
+
+    public static String join(Collection<?> elements, String separator) {
+        if (elements == null || elements.isEmpty()) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder();
+        Iterator<?> itr = elements.iterator();
+        while (itr.hasNext()) {
+            builder.append(itr.next());
+            if (itr.hasNext()) {
+                builder.append(separator);
             }
         }
         return builder.toString();

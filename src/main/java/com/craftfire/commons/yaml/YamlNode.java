@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.craftfire.commons.util.Util;
 import com.craftfire.commons.util.ValueHolder;
 import com.craftfire.commons.util.ValueHolderBase;
 import com.craftfire.commons.util.ValueType;
@@ -18,7 +19,7 @@ public class YamlNode implements ValueHolder {
     private List<YamlNode> listCache = null;
     private Map<String, YamlNode> mapCache = null;
     private ValueHolder holder;
-    private YamlManager manager;
+    private final YamlManager manager;
     private YamlNode parent = null;
 
     public YamlNode(YamlManager manager, String name, Object data) {
@@ -55,7 +56,7 @@ public class YamlNode implements ValueHolder {
     }
 
     public String getPath() {
-        return this.parent.getPath() + "." + getName();
+        return Util.join(getPathElements(), ".");
     }
 
     public YamlManager getYamlManager() {
@@ -75,14 +76,26 @@ public class YamlNode implements ValueHolder {
     }
 
     public YamlNode getChild(String name) throws YamlException {
+        return getChild(name, false);
+    }
+
+    public YamlNode getChild(String name, boolean add) throws YamlException {
+        if (add && isMap() && !hasChild(name)) {
+            return addChild(name, null);
+        }
         return getChildrenMap().get(name);
     }
 
-    public boolean hasChild(String name) throws YamlException {
+    public boolean hasChild(String name) {
         if (!isMap()) {
             return false;
         }
-        return getChildrenMap().containsKey(name);
+        try {
+            return getChildrenMap().containsKey(name);
+        } catch (YamlException e) {
+            this.manager.getLogger().stackTrace(e);
+            return false;
+        }
     }
 
     public Map<String, YamlNode> getChildrenMap() throws YamlException {
@@ -126,7 +139,11 @@ public class YamlNode implements ValueHolder {
     @SuppressWarnings("unchecked")
     public YamlNode addChild(String name, Object value) throws YamlException {
         if (isScalar()) {
-            throw new YamlException("Can't add child to scalar node", getPath());
+            if (isNull()) {
+                setValue(new HashMap<String, Object>());
+            } else {
+                throw new YamlException("Can't add child to scalar node", getPath());
+            }
         }
         if (value instanceof ValueHolder) {
             value = ((ValueHolder) value).getValue();
@@ -134,7 +151,7 @@ public class YamlNode implements ValueHolder {
         if (isList()) {
             List<Object> list;
             if (getValue() instanceof List<?>) {
-                list = (List<Object>) getValue();   // Because Java doesn't care if it's <Object> or something else.
+                list = (List<Object>) getValue(); // Because Java doesn't care if it's <Object> or something else.
             } else {
                 list = new ArrayList<Object>((Collection<?>) getValue());
                 setValue(list);
@@ -143,13 +160,7 @@ public class YamlNode implements ValueHolder {
             clearCache();
             return getChildrenList().get(list.lastIndexOf(value));
         }
-        Map<Object, Object> map;
-        if (getValue() instanceof Map<?, ?>) {
-            map = (Map<Object, Object>) getValue();
-        } else {
-            map = new HashMap<Object, Object>((Map<?, ?>) getValue());
-            setValue(map);
-        }
+        Map<Object, Object> map = (Map<Object, Object>) getValue();
         map.put(name, value);
         clearCache();
         return getChild(name);
@@ -183,6 +194,69 @@ public class YamlNode implements ValueHolder {
     public void setValue(Object data) {
         this.holder = new ValueHolderBase(this.holder.getName(), false, data);
         clearCache();
+    }
+
+    public YamlNode getNode(String... path) throws YamlException {
+        return getNode(false, path);
+    }
+
+    public YamlNode getNode(boolean add, String... path) throws YamlException {
+        return getNode(Util.join(path, "."), add);
+    }
+
+    public YamlNode getNode(String path) throws YamlException {
+        return getNode(path, false);
+    }
+
+    public YamlNode getNode(String path, boolean add) throws YamlException {
+        String[] elements = path.split("\\.", 2);
+        if (elements.length == 0) {
+            return null;
+        }
+        YamlNode node = getChild(elements[0], add);
+        if (node == null || elements.length == 1) {
+            return node;
+        }
+        return node.getNode(elements[1], add);
+    }
+
+    public boolean hasNode(String... path) {
+        return hasNode(Util.join(path, "."));
+    }
+
+    public boolean hasNode(String path) {
+        String[] elements = path.split("\\.", 2);
+        if (elements.length == 0 || !hasChild(elements[0])) {
+            return false;
+        }
+        if (elements.length == 1) {
+            return true;
+        }
+        try {
+            return getChild(elements[0]).hasNode(elements[1]);
+        } catch (YamlException e) {
+            this.manager.getLogger().stackTrace(e);
+            return false;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Object> getList() {
+        if (isList()) {
+            Collection<?> value = (Collection<?>) getValue();
+            if (value instanceof List<?>) {
+                return (List<Object>) value;
+            }
+            return new ArrayList<Object>(value);
+        }
+        return null;
+    }
+
+    public Map<Object, Object> getMap() {
+        if (isMap()) {
+            return (Map<Object, Object>) getValue();
+        }
+        return null;
     }
 
     @Override
