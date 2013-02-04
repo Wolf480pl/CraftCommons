@@ -1,37 +1,45 @@
-/*
- * This file is part of CraftCommons.
- *
- * Copyright (c) 2011-2012, CraftFire <http://www.craftfire.com/>
- * CraftCommons is licensed under the GNU Lesser General Public License.
- *
- * CraftCommons is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * CraftCommons is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
 package com.craftfire.commons.yaml;
 
-public class YamlNode extends YamlNodeSource {
-    private YamlNodeSource parent;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Blob;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-    public YamlNode(YamlNodeSource parent, String name, Object data) {
-        super(parent.getYamlManager(), name, data);
+import com.craftfire.commons.util.ValueHolder;
+import com.craftfire.commons.util.ValueHolderBase;
+import com.craftfire.commons.util.ValueType;
+
+public class YamlNode implements ValueHolder {
+    private List<YamlNode> listCache = null;
+    private Map<String, YamlNode> mapCache = null;
+    private ValueHolder holder;
+    private YamlManager manager;
+    private YamlNode parent = null;
+
+    public YamlNode(YamlManager manager, String name, Object data) {
+        this.holder = new ValueHolderBase(name, false, data);
+        this.manager = manager;
+    }
+
+    public YamlNode(YamlNode parent, String name, Object data) {
+        this(parent.getYamlManager(), name, data);
         this.parent = parent;
     }
 
-    public YamlNodeSource getParent() {
+    public boolean hasParent() {
+        return this.parent != null;
+    }
+
+    public YamlNode getParent() {
         return this.parent;
     }
 
-    protected void setParent(YamlNodeSource parent) {
+    protected void setParent(YamlNode parent) {
         this.parent = parent;
     }
 
@@ -39,8 +47,213 @@ public class YamlNode extends YamlNodeSource {
         return getPath().split("\\.");
     }
 
-    @Override
     public String getPath() {
         return this.parent.getPath() + "." + getName();
     }
+
+    public YamlManager getYamlManager() {
+        return this.manager;
+    }
+
+    public boolean isMap() {
+        return getValue() instanceof Map<?, ?>;
+    }
+
+    public boolean isList() {
+        return getValue() instanceof Collection<?>;
+    }
+
+    public boolean isScalar() {
+        return !isMap() && !isList();
+    }
+
+    public YamlNode getChild(String name) throws YamlException {
+        return getChildrenMap().get(name);
+    }
+
+    public boolean hasChild(String name) throws YamlException {
+        if (!isMap()) {
+            return false;
+        }
+        return getChildrenMap().containsKey(name);
+    }
+
+    public Map<String, YamlNode> getChildrenMap() throws YamlException {
+        if (!isMap()) {
+            throw new YamlException("Node is not a map!", getPath());
+        }
+        if (this.mapCache == null) {
+            this.mapCache = new HashMap<String, YamlNode>();
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) getValue()).entrySet()) {
+                String name = entry.getKey().toString();
+                this.mapCache.put(name, new YamlNode(this, name, entry.getValue()));
+            }
+        }
+        return new HashMap<String, YamlNode>(this.mapCache);
+    }
+
+    public List<YamlNode> getChildrenList() throws YamlException {
+        if (isMap()) {
+            if (this.mapCache != null) {
+                return new ArrayList<YamlNode>(this.mapCache.values());
+            }
+            return new ArrayList<YamlNode>(getChildrenMap().values());
+        }
+        if (!isList()) {
+            throw new YamlException("Node is not a list!", getPath());
+        }
+        if (this.listCache == null) {
+            this.listCache = new ArrayList<YamlNode>();
+            for (Object o : (Collection<?>) getValue()) {
+                this.listCache.add(new YamlNode(this, null, o));
+            }
+        }
+        return new ArrayList<YamlNode>(this.listCache);
+    }
+
+    protected void clearCache() {
+        this.listCache = null;
+        this.mapCache = null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public YamlNode addChild(String name, Object value) throws YamlException {
+        if (isScalar()) {
+            throw new YamlException("Can't add child to scalar node", getPath());
+        }
+        if (value instanceof ValueHolder) {
+            value = ((ValueHolder) value).getValue();
+        }
+        if (isList()) {
+            List<Object> list;
+            if (getValue() instanceof List<?>) {
+                list = (List<Object>) getValue();   // Because Java doesn't care if it's <Object> or something else.
+            } else {
+                list = new ArrayList<Object>((Collection<?>) getValue());
+                setValue(list);
+            }
+            list.add(value);
+            return getChildrenList().get(list.lastIndexOf(value));
+        }
+        Map<Object, Object> map;
+        if (getValue() instanceof Map<?, ?>) {
+            map = (Map<Object, Object>) getValue();
+        } else {
+            map = new HashMap<Object, Object>((Map<?, ?>) getValue());
+            setValue(map);
+        }
+        map.put(name, value);
+        return getChild(name);
+    }
+
+    public YamlNode addChild(YamlNode node) throws YamlException {
+        return addChild(node.getName(), node.getValue());
+    }
+
+    public YamlNode removeChild(String name) throws YamlException {
+        if (hasChild(name)) {
+            return removeChild(getChild(name));
+        }
+        return null;
+    }
+
+    public YamlNode removeChild(YamlNode node) {
+        if (isScalar() || node.getParent() != this) {
+            return null;
+        }
+        if (isList()) {
+            ((Collection<?>) getValue()).remove(node.getValue());
+        } else {
+            ((Map<?, ?>) getValue()).remove(node.getName());
+        }
+        node.setParent(null);
+        clearCache();
+        return node;
+    }
+
+    public void setValue(Object data) {
+        this.holder = new ValueHolderBase(this.holder.getName(), false, data);
+        clearCache();
+    }
+
+    @Override
+    public String getName() {
+        return this.holder.getName();
+    }
+
+    @Override
+    public ValueType getType() {
+        return this.holder.getType();
+    }
+
+    @Override
+    public Object getValue() {
+        return this.holder.getValue();
+    }
+
+    @Override
+    public String getString() {
+        return this.holder.getString();
+    }
+
+    @Override
+    public int getInt() {
+        return this.holder.getInt();
+    }
+
+    @Override
+    public long getLong() {
+        return this.holder.getLong();
+    }
+
+    @Override
+    public BigInteger getBigInt() {
+        return this.holder.getBigInt();
+    }
+
+    @Override
+    public double getDouble() {
+        return this.holder.getDouble();
+    }
+
+    @Override
+    public float getFloat() {
+        return this.holder.getFloat();
+    }
+
+    @Override
+    public BigDecimal getDecimal() {
+        return this.holder.getDecimal();
+    }
+
+    @Override
+    public byte[] getBytes() {
+        return this.holder.getBytes();
+    }
+
+    @Override
+    public Date getDate() {
+        return this.holder.getDate();
+    }
+
+    @Override
+    public Blob getBlob() {
+        return this.holder.getBlob();
+    }
+
+    @Override
+    public boolean getBool() {
+        return this.holder.getBool();
+    }
+
+    @Override
+    public boolean isNull() {
+        return this.holder.isNull();
+    }
+
+    @Override
+    public boolean isUnsigned() {
+        return this.holder.isUnsigned();
+    }
+
 }
