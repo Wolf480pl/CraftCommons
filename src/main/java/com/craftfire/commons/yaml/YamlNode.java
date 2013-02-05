@@ -173,6 +173,36 @@ public class YamlNode extends AbstractValueHolder {
         return addChild(node.getName(), node.getValue());
     }
 
+    @SuppressWarnings("unchecked")
+    public void addChildren(YamlNode... nodes) throws YamlException {
+        if (isScalar()) {
+            if (isNull()) {
+                setValue(new HashMap<String, Object>());
+            } else {
+                throw new YamlException("Can't add child to scalar node", getPath());
+            }
+        }
+        if (isList()) {
+            List<Object> list;
+            if (getValue() instanceof List<?>) {
+                list = (List<Object>) getValue(); // Because Java doesn't care if it's <Object> or something else.
+            } else {
+                list = new ArrayList<Object>((Collection<?>) getValue());
+                setValue(list);
+            }
+            for (YamlNode node : nodes) {
+                list.add(node.getValue());
+            }
+            clearCache();
+            return;
+        }
+        Map<Object, Object> map = (Map<Object, Object>) getValue();
+        for (YamlNode node : nodes) {
+            map.put(node.getName(), node.getValue());
+        }
+        clearCache();
+    }
+
     public YamlNode removeChild(String name) throws YamlException {
         if (hasChild(name)) {
             return removeChild(getChild(name));
