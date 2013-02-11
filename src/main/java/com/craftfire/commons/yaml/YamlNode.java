@@ -255,6 +255,37 @@ public class YamlNode extends AbstractValueHolder {
         }
     }
 
+    public int getChildrenCount() {
+        if (isScalar()) {
+            return 0;
+        }
+        try {
+            getChildrenList(); // This can resolve both Map and List
+        } catch (YamlException e) {
+            this.manager.getLogger().stackTrace(e);
+            return 0;
+        }
+        if (isList()) {
+            return this.listCache.size();
+        }
+        return this.mapCache.size();
+    }
+
+    public int getFinalNodeCount() {
+        if (isScalar()) {
+            return 1;
+        }
+        int count = 0;
+        try {
+            for (YamlNode node : getChildrenList()) {
+                count += node.getFinalNodeCount();
+            }
+        } catch (YamlException e) {
+            this.manager.getLogger().stackTrace(e);
+        }
+        return count;
+    }
+
     public YamlNode removeChild(String name) {
         if (hasChild(name)) {
             try {
