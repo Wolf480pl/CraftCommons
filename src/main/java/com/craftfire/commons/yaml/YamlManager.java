@@ -235,7 +235,7 @@ public class YamlManager {
             return false;
         }
         try {
-            this.yaml.dump(this.root.getValue(), new FileWriter(this.file));
+            this.yaml.dump(this.root.dump(), new FileWriter(this.file));
         } catch (IOException e) {
             getLogger().stackTrace(e);
             return false;
