@@ -149,6 +149,18 @@ public class YamlNode extends AbstractValueHolder {
         return new ArrayList<YamlNode>(this.listCache);
     }
 
+    public YamlNode addChild(Object value) throws YamlException {
+        if (!isList()) {
+            if (isNull()) {
+                this.listCache = new ArrayList<YamlNode>();
+                this.resolved = true;
+            } else {
+                throw new YamlException("Can't add nameless child to non-list node", getPath());
+            }
+        }
+        return addChild("", value);
+    }
+
     public YamlNode addChild(String name, Object value) throws YamlException {
         if (isScalar()) {
             if (isNull()) {
@@ -199,6 +211,47 @@ public class YamlNode extends AbstractValueHolder {
         }
         for (YamlNode node : nodes) {
             this.mapCache.put(node.getName(), new YamlNode(this, node.getName(), node.dump()));
+        }
+    }
+
+    public void addChildren(Map<?, ?> map) throws YamlException {
+        if (isScalar()) {
+            if (isNull()) {
+                this.mapCache = new HashMap<String, YamlNode>();
+                this.resolved = true;
+            } else {
+                throw new YamlException("Can't add child to scalar node", getPath());
+            }
+        }
+        if (!this.resolved) {
+            getChildrenList(); // This can resolve both Map and List
+        }
+        if (isList()) {
+            for (Object value : map.values()) {
+                this.listCache.add(new YamlNode(this, "", value));
+            }
+            return;
+        }
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            String name = entry.getKey().toString();
+            this.mapCache.put(name, new YamlNode(this, name, entry.getValue()));
+        }
+    }
+
+    public void addChildren(Collection<?> collection) throws YamlException {
+        if (!isList()) {
+            if (isNull()) {
+                this.listCache = new ArrayList<YamlNode>();
+                this.resolved = true;
+            } else {
+                throw new YamlException("Can't add nameless child to non-list node", getPath());
+            }
+        }
+        if (!this.resolved) {
+            getChildrenList();
+        }
+        for (Object value : collection) {
+            this.listCache.add(new YamlNode(this, "", value));
         }
     }
 
