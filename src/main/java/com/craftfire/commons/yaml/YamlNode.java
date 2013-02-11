@@ -35,8 +35,8 @@ public class YamlNode extends AbstractValueHolder {
      * @param value    the value
      */
     public YamlNode(YamlManager manager, String name, Object value) {
-        this.holder = new ValueHolderBase(name, false, value);
         this.manager = manager;
+        this.holder = new ValueHolderBase(normalizePath(name), false, value);
     }
 
     /**
@@ -76,6 +76,13 @@ public class YamlNode extends AbstractValueHolder {
      */
     protected void setParent(YamlNode parent) {
         this.parent = parent;
+    }
+
+    protected String normalizePath(String name) {
+        if (this.manager.isCaseSensitive()) {
+            return name;
+        }
+        return name.toLowerCase();
     }
 
     /**
@@ -187,7 +194,7 @@ public class YamlNode extends AbstractValueHolder {
         if (add && (isMap() || isNull()) && !hasChild(name)) {
             return addChild(name, null);
         }
-        return getChildrenMap().get(name);
+        return getChildrenMap().get(normalizePath(name));
     }
 
     /**
@@ -203,7 +210,7 @@ public class YamlNode extends AbstractValueHolder {
             return false;
         }
         try {
-            return getChildrenMap().containsKey(name);
+            return getChildrenMap().containsKey(normalizePath(name));
         } catch (YamlException e) {
             this.manager.getLogger().stackTrace(e);
             return false;
@@ -305,6 +312,7 @@ public class YamlNode extends AbstractValueHolder {
             value = ((ValueHolder) value).getValue();
         }
         YamlNode node;
+        name = normalizePath(name);
         if (!this.resolved) {
             getChildrenList(); // This can resolve both Map and List
         }
