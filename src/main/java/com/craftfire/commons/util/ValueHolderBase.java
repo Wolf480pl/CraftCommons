@@ -15,10 +15,10 @@ import java.util.Date;
  * NOTE: Conversions don't care about unsigned setting yet.
  */
 public class ValueHolderBase extends AbstractValueHolder {
-    protected final String name;
-    protected final Object value;
-    protected final ValueType type;
-    protected final boolean unsigned;
+    private final String name;
+    private final Object value;
+    private final ValueType type;
+    private final boolean unsigned;
 
     // TODO: Make the conversions consider the unsigned setting
 
