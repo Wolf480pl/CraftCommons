@@ -31,11 +31,15 @@ public class YamlNode extends AbstractValueHolder {
     /**
      * Creates a new YamlNode with given SimpleYamlManager, node name, and value.
      * 
-     * @param manager  the YamlManager
-     * @param name     the name
-     * @param value    the value
+     * @param manager               the YamlManager
+     * @param name                  the name
+     * @param value                 the value
+     * @throws NullPointerException if the manager is null
      */
     public YamlNode(SimpleYamlManager manager, String name, Object value) {
+        if (manager == null) {
+            throw new NullPointerException("manager can't be null");
+        }
         this.manager = manager;
         this.holder = new ValueHolderBase(normalizePath(name), false, value);
     }

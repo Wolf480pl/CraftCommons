@@ -1,6 +1,8 @@
 package com.craftfire.commons.yaml;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
@@ -123,6 +125,22 @@ public class TestSimpleYamlManager {
         doReturn(randomLong).when(spy).getLong("bob.has.no.cat", 0);
         assertEquals(randomLong, spy.getLong("bob.has.no.cat"));
         verify(spy).getLong("bob.has.no.cat", 0);
+    }
+
+    @Test
+    public void testRootNode() {
+        Object mockValue = mock(Object.class);
+        SimpleYamlManager mockMgr = mock(SimpleYamlManager.class);
+        YamlNode node = new YamlNode(mockMgr, "test", mockValue);
+
+        this.manager.setRootNode(node);
+        YamlNode root = this.manager.getRootNode();
+
+        assertNotSame(node, root);
+        assertEquals(mockValue, root.getValue());
+        assertNull(root.getName());
+        assertSame(this.manager, root.getYamlManager());
+        assertNull(root.getParent());
     }
 
 }
