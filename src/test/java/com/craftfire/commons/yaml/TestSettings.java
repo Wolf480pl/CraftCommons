@@ -7,6 +7,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import java.lang.reflect.Field;
 import java.util.logging.Logger;
 
 import org.junit.Before;
@@ -15,6 +16,7 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.DumperOptions.FlowStyle;
 import org.yaml.snakeyaml.DumperOptions.LineBreak;
 import org.yaml.snakeyaml.DumperOptions.ScalarStyle;
+import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.BaseConstructor;
 import org.yaml.snakeyaml.constructor.Constructor;
 import org.yaml.snakeyaml.representer.Representer;
@@ -113,5 +115,24 @@ public class TestSettings {
 
         assertSame(this.settings, this.settings.setCaseSensitive(true));
         assertTrue(this.settings.isCaseSensitive());
+    }
+
+    @Test
+    public void testCreateYaml() throws NoSuchFieldException, IllegalAccessException {
+        Yaml yaml = this.settings.createYaml();
+        Field resolver = Yaml.class.getDeclaredField("resolver");
+        Field constructor = Yaml.class.getDeclaredField("constructor");
+        Field representer = Yaml.class.getDeclaredField("representer");
+        Field dumperOptions = Yaml.class.getDeclaredField("dumperOptions");
+
+        resolver.setAccessible(true);
+        constructor.setAccessible(true);
+        representer.setAccessible(true);
+        dumperOptions.setAccessible(true);
+
+        assertSame(this.settings.getResolver(), resolver.get(yaml));
+        assertSame(this.settings.getConstructor(), constructor.get(yaml));
+        assertSame(this.settings.getRepresenter(), representer.get(yaml));
+        assertSame(this.settings.getDumperOptions(), dumperOptions.get(yaml));
     }
 }
