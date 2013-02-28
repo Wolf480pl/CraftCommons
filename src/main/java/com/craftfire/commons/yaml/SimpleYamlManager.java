@@ -37,6 +37,8 @@ import com.craftfire.commons.util.LoggingManager;
 public class SimpleYamlManager implements YamlManager {
     private LoggingManager loggingManager;
     private File file = null;
+    private String resource = null;
+    private Reader reader = null;
     private final Yaml yaml;
     private final boolean caseSensitive;
     @SuppressWarnings("unused")
@@ -45,7 +47,9 @@ public class SimpleYamlManager implements YamlManager {
     private YamlNode root;
 
     /**
-     * Creates a new SimpleYamlManager with default settings and loads yaml from the given file.
+     * Creates a new SimpleYamlManager with default settings and given file to load the document from.
+     * <p>
+     * Note that the constructor won't load the yaml itself. Do do this, you should use {@link #load()}.
      * 
      * @param  file        file to load yaml from
      * @throws IOException if an IOException occurred
@@ -55,7 +59,9 @@ public class SimpleYamlManager implements YamlManager {
     }
 
     /**
-     * Creates a new SimpleYamlManager with given settings and loads yaml from the given file.
+     * Creates a new SimpleYamlManager with given settings and file to load the document from.
+     * <p>
+     * Note that the constructor won't load the yaml itself. Do do this, you should use {@link #load()}.
      * 
      * @param  file        file to load yaml from
      * @param  settings    settings to use
@@ -68,11 +74,12 @@ public class SimpleYamlManager implements YamlManager {
         this.multiDocument = settings.isMultiDocument();
         this.separator = settings.getSeparator();
         setLoggingManager(settings.getLogger());
-        load(file);
     }
 
     /**
-     * Creates a new SimpleYamlManager with default settings and loads yaml from the given classpath resource.
+     * Creates a new SimpleYamlManager with default settings and given classpath resource to load the document from.
+     * <p>
+     * Note that the constructor won't load the yaml itself. Do do this, you should use {@link #load()}.
      * 
      * @param  path        path to the resource in classpath to load the yaml from
      * @throws IOException if an IOException occurred
@@ -83,22 +90,26 @@ public class SimpleYamlManager implements YamlManager {
 
     /**
      * Creates a new SimpleYamlManager with given settings and loads yaml from the given classpath resource.
+     * <p>
+     * Note that the constructor won't load the yaml itself. Do do this, you should use {@link #load()}.
      * 
      * @param  path        path to the resource in classpath to load the yaml from
      * @param  settings    settings to use
      * @throws IOException if an IOException occurred
      */
     public SimpleYamlManager(String path, Settings settings) throws IOException {
+        this.resource = path;
         this.yaml = settings.createYaml();
         this.caseSensitive = settings.isCaseSensitive();
         this.multiDocument = settings.isMultiDocument();
         this.separator = settings.getSeparator();
         setLoggingManager(settings.getLogger());
-        load(path);
     }
 
     /**
-     * Creates a new SimpleYamlManager with default settings and loads yaml from the given input stream.
+     * Creates a new SimpleYamlManager with default settings and given input stream to load the document from.
+     * <p>
+     * Note that the constructor won't load the yaml itself. Do do this, you should use {@link #load()}.
      * 
      * @param  stream      stream to load the yaml from
      * @throws IOException if an IOException occurred
@@ -108,18 +119,22 @@ public class SimpleYamlManager implements YamlManager {
     }
 
     /**
-     * Creates a new SimpleYamlManager with given settings and loads yaml from the given input stream.
+     * Creates a new SimpleYamlManager with given settings and input stream to load the document from.
+     * <p>
+     * Note that the constructor won't load the yaml itself. Do do this, you should use {@link #load()}.
      * 
      * @param  stream      stream to load the yaml from
      * @param  settings    settings to use
      * @throws IOException if an IOException occurred
      */
     public SimpleYamlManager(InputStream stream, Settings settings) throws IOException {
-        this(new InputStreamReader(stream), settings);
+        this(new InputStreamReader(stream, "UTF-8"), settings);
     }
 
     /**
-     * Creates a new SimpleYamlManager with default settings and loads yaml from the given reader.
+     * Creates a new SimpleYamlManager with default settings and given reader to load the yaml from.
+     * <p>
+     * Note that the constructor won't load the yaml itself. Do do this, you should use {@link #load()}.
      * 
      * @param  reader      reader to load the yaml from
      * @throws IOException if an IOException occurred
@@ -129,25 +144,27 @@ public class SimpleYamlManager implements YamlManager {
     }
 
     /**
-     * Creates a new SimpleYamlManager with given settings and loads yaml from the given reader.
+     * Creates a new SimpleYamlManager with given settings and reader to load the yaml from.
+     * <p>
+     * Note that the constructor won't load the yaml itself. Do do this, you should use {@link #load()}.
      * 
      * @param  reader      reader to load the yaml from
      * @param  settings    settings to use
      * @throws IOException if an IOException occurred
      */
     public SimpleYamlManager(Reader reader, Settings settings) throws IOException {
+        this.reader = reader;
         this.yaml = settings.createYaml();
         this.caseSensitive = settings.isCaseSensitive();
         this.multiDocument = settings.isMultiDocument();
         this.separator = settings.getSeparator();
         setLoggingManager(settings.getLogger());
-        load(reader);
     }
 
     /**
      * Returns the state of case-sensitive option (off by default).
      * <p>
-     * If this option is on, node names will be case-sensitive. 
+     * If this option is on, node names will be case-sensitive.
      * 
      * @return true if on, otherwise false
      * @see Settings#isCaseSensitive()
@@ -399,17 +416,25 @@ public class SimpleYamlManager implements YamlManager {
      * @see com.craftfire.commons.yaml.YamlManager#reload()
      */
     @Override
-    public boolean reload() {
-        if (this.file == null) {
-            return false;
-        }
+    public boolean load() {
         try {
-            load(this.file);
+            if (this.reader != null) {
+                load(this.reader);
+                this.reader = null;
+                return true;
+            }
+            if (this.resource != null) {
+                load(this.resource);
+                return true;
+            }
+            if (this.file != null) {
+                load(this.file);
+                return true;
+            }
         } catch (IOException e) {
             getLogger().stackTrace(e);
-            return false;
         }
-        return true;
+        return false;
     }
 
     /**

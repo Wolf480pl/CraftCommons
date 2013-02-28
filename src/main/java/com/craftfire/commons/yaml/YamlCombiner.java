@@ -372,13 +372,13 @@ public class YamlCombiner implements YamlManager {
     }
 
     /**
-     * @return {@code true} reloaded successfully at least one YamlManager, {@code false} otherwise
+     * @return {@code true} if at least one YamlManager loaded it's document successfully, {@code false} otherwise
      */
     @Override
-    public boolean reload() {
+    public boolean load() {
         boolean result = false;
         for (YamlManager manager : this.managers) {
-            result = result || manager.reload();
+            result = result || manager.load();
         }
         return result;
     }
@@ -395,7 +395,9 @@ public class YamlCombiner implements YamlManager {
      * @see     SimpleYamlManager#SimpleYamlManager(File, Settings)
      */
     public void load(File file) throws IOException {
-        addYamlManager(new SimpleYamlManager(file, this.settings));
+        YamlManager mgr = new SimpleYamlManager(file, this.settings);
+        mgr.load();
+        addYamlManager(mgr);
     }
 
     /**
@@ -410,7 +412,9 @@ public class YamlCombiner implements YamlManager {
      * @see    SimpleYamlManager#SimpleYamlManager(String, Settings)
      */
     public void load(String path) throws IOException {
-        addYamlManager(new SimpleYamlManager(path, this.settings));
+        YamlManager mgr = new SimpleYamlManager(path, this.settings);
+        mgr.load();
+        addYamlManager(mgr);
     }
 
 }
