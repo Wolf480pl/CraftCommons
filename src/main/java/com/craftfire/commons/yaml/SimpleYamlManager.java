@@ -39,7 +39,7 @@ public class SimpleYamlManager implements YamlManager {
     private File file = null;
     private String resource = null;
     private Reader reader = null;
-    private final Yaml yaml;
+    protected final Yaml yaml;
     private final boolean caseSensitive;
     @SuppressWarnings("unused")
     private final boolean multiDocument; // May be used in the future
@@ -52,9 +52,8 @@ public class SimpleYamlManager implements YamlManager {
      * Note that the constructor won't load the yaml itself. Do do this, you should use {@link #load()}.
      * 
      * @param  file        file to load yaml from
-     * @throws IOException if an IOException occurred
      */
-    public SimpleYamlManager(File file) throws IOException {
+    public SimpleYamlManager(File file) {
         this(file, new Settings());
     }
 
@@ -65,9 +64,8 @@ public class SimpleYamlManager implements YamlManager {
      * 
      * @param  file        file to load yaml from
      * @param  settings    settings to use
-     * @throws IOException if an IOException occurred
      */
-    public SimpleYamlManager(File file, Settings settings) throws IOException {
+    public SimpleYamlManager(File file, Settings settings) {
         this.file = file;
         this.yaml = settings.createYaml();
         this.caseSensitive = settings.isCaseSensitive();
@@ -82,9 +80,8 @@ public class SimpleYamlManager implements YamlManager {
      * Note that the constructor won't load the yaml itself. Do do this, you should use {@link #load()}.
      * 
      * @param  path        path to the resource in classpath to load the yaml from
-     * @throws IOException if an IOException occurred
      */
-    public SimpleYamlManager(String path) throws IOException {
+    public SimpleYamlManager(String path) {
         this(path, new Settings());
     }
 
@@ -95,9 +92,8 @@ public class SimpleYamlManager implements YamlManager {
      * 
      * @param  path        path to the resource in classpath to load the yaml from
      * @param  settings    settings to use
-     * @throws IOException if an IOException occurred
      */
-    public SimpleYamlManager(String path, Settings settings) throws IOException {
+    public SimpleYamlManager(String path, Settings settings) {
         this.resource = path;
         this.yaml = settings.createYaml();
         this.caseSensitive = settings.isCaseSensitive();
@@ -137,7 +133,6 @@ public class SimpleYamlManager implements YamlManager {
      * Note that the constructor won't load the yaml itself. Do do this, you should use {@link #load()}.
      * 
      * @param  reader      reader to load the yaml from
-     * @throws IOException if an IOException occurred
      */
     public SimpleYamlManager(Reader reader) throws IOException {
         this(reader, new Settings());
@@ -150,9 +145,8 @@ public class SimpleYamlManager implements YamlManager {
      * 
      * @param  reader      reader to load the yaml from
      * @param  settings    settings to use
-     * @throws IOException if an IOException occurred
      */
-    public SimpleYamlManager(Reader reader, Settings settings) throws IOException {
+    public SimpleYamlManager(Reader reader, Settings settings) {
         this.reader = reader;
         this.yaml = settings.createYaml();
         this.caseSensitive = settings.isCaseSensitive();
@@ -181,6 +175,15 @@ public class SimpleYamlManager implements YamlManager {
      */
     public String getSeparator() {
         return this.separator;
+    }
+
+    /**
+     * Returns path to the classpath resource used by this SimpleYamlManager, or null if not using a classpath resource.
+     * 
+     * @return path to the resource, or null
+     */
+    public String getResource() {
+        return this.resource;
     }
 
     /* (non-Javadoc)
