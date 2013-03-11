@@ -1,3 +1,22 @@
+/*
+ * This file is part of CraftCommons.
+ *
+ * Copyright (c) 2011-2012, CraftFire <http://www.craftfire.com/>
+ * CraftCommons is licensed under the GNU Lesser General Public License.
+ *
+ * CraftCommons is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * CraftCommons is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package com.craftfire.commons.yaml;
 
 import static org.junit.Assert.assertEquals;
@@ -17,6 +36,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.stub;
 import static org.mockito.Mockito.times;
@@ -33,6 +53,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -433,6 +454,53 @@ public class TestSimpleYamlManager {
         verify(mgr).load(argThat(new IsReaderThatContains(testString)));
     }
 
+    @Test
+    public void testLoadFromResource() throws IOException {
+        String fileContent = "Some UTF-8 ąęłĸóþ¶↓µ";
+        String filePath = "testresource.txt";
+
+        SimpleYamlManager mgr = spy(this.manager);
+
+        doNothing().when(mgr).load(isA(InputStream.class));
+        mgr.load(filePath);
+        verify(mgr).load(argThat(new IsStreamThatContains(fileContent.getBytes("UTF-8"))));
+    }
+
+    @Test
+    public void testLoadFromFile() throws IOException {
+        String fileContent = "Some UTF-8 ąęłĸóþ¶↓µ";
+        String filePath = "./target/test-classes/testresource.txt";
+
+        LoggingManager logger = mock(LoggingManager.class);
+        SimpleYamlManager mgr = spy(this.manager);
+
+        mgr.setLoggingManager(logger);
+        mgr.load((File) null);
+        verify(mgr, never()).load(isA(InputStream.class));
+        verify(mgr, never()).load(isA(Reader.class));
+
+        doNothing().when(mgr).load(isA(InputStream.class));
+
+        File file = mock(File.class);
+        stub(file.getPath()).toReturn(filePath);
+        stub(file.exists()).toReturn(true);
+        mgr.load(file);
+        verify(mgr).load(argThat(new IsStreamThatContains(fileContent.getBytes("UTF-8"))));
+
+        stub(file.exists()).toReturn(false);
+        stub(file.getParentFile()).toReturn(null);
+        mgr.load(file);
+        verify(file).createNewFile();
+        verify(mgr).load(argThat(new IsStreamThatContains(fileContent.getBytes("UTF-8"))));
+
+        File file1 = mock(File.class);
+        stub(file.getParentFile()).toReturn(file1);
+        mgr.load(file);
+        verify(file1).mkdirs();
+        verify(file, times(2)).createNewFile();
+        verify(mgr).load(argThat(new IsStreamThatContains(fileContent.getBytes("UTF-8"))));
+    }
+
     class IsReaderThatContains extends ArgumentMatcher<Reader> {
         private final String string;
         private List<Reader> readers = new ArrayList<Reader>();
@@ -452,6 +520,35 @@ public class TestSimpleYamlManager {
                     ((Reader) argument).read(buf);
                     if (new String(buf).equals(this.string)) {
                         this.readers.add((Reader) argument);
+                        return true;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            return false;
+        }
+    }
+
+    class IsStreamThatContains extends ArgumentMatcher<InputStream> {
+        private final byte[] bytes;
+        private List<InputStream> streams = new ArrayList<InputStream>();
+
+        public IsStreamThatContains(byte[] bytes) {
+            this.bytes = bytes;
+        }
+
+        @Override
+        public boolean matches(Object argument) {
+            if (argument instanceof InputStream) {
+                if (this.streams.contains(argument)) {
+                    return true;
+                }
+                byte[] buf = new byte[this.bytes.length];
+                try {
+                    ((InputStream) argument).read(buf);
+                    if (Arrays.equals(buf, this.bytes)) {
+                        this.streams.add((InputStream) argument);
                         return true;
                     }
                 } catch (IOException e) {

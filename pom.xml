@@ -127,7 +127,7 @@
                 <filtering>false</filtering>
                 <directory>${basedir}/src/test/resource</directory>
                 <includes>
-                    <include>test.h2.db</include>
+                    <include>**.*</include>
                 </includes>
             </testResource>
         </testResources>
