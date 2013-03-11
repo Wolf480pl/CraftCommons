@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
@@ -168,6 +169,19 @@ public class TestSimpleYamlManager {
         assertNull(root.getName());
         assertSame(this.manager, root.getYamlManager());
         assertNull(root.getParent());
+    }
+
+    @Test
+    public void testLogger() throws NoSuchFieldException, IllegalAccessException {
+        LoggingManager logger = mock(LoggingManager.class);
+        this.manager.setLoggingManager(logger);
+        assertSame(logger, this.manager.getLogger());
+
+        try {
+            this.manager.setLoggingManager(null);
+            fail("Expected an IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+        }
     }
 
     @Test

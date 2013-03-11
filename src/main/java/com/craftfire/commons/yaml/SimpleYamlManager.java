@@ -134,7 +134,7 @@ public class SimpleYamlManager implements YamlManager {
      * 
      * @param  reader      reader to load the yaml from
      */
-    public SimpleYamlManager(Reader reader) throws IOException {
+    public SimpleYamlManager(Reader reader) {
         this(reader, new Settings());
     }
 
@@ -203,9 +203,9 @@ public class SimpleYamlManager implements YamlManager {
      */
     @Override
     public LoggingManager getLogger() {
-        if (this.loggingManager == null) {
+        /*if (this.loggingManager == null) {
             this.loggingManager = new LoggingManager("CraftFire.YamlManager", "[YamlManager]");
-        }
+        }*/
         return this.loggingManager;
     }
 
