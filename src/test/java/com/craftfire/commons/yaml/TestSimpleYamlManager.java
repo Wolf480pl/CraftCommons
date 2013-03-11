@@ -403,10 +403,9 @@ public class TestSimpleYamlManager {
 
     @Test
     public void testLoadFromReader() {
-        byte[] randBytes = new byte[rnd.nextInt(256)];
-        rnd.nextBytes(randBytes);
-        String randString = new String(randBytes);
-        Reader reader = new StringReader(randString);
+        int randomInt = rnd.nextInt();
+        String testString = "test" + randomInt + "ąęłĸ¶þ→µ";
+        Reader reader = new StringReader(testString);
         Object obj = mock(Object.class);
 
         LoggingManager logger = new LoggingManager("CraftFire.YamlManager", "[YamlManager]");
@@ -414,7 +413,7 @@ public class TestSimpleYamlManager {
         Settings settings = mock(Settings.class);
         stub(settings.createYaml()).toReturn(yaml);
         stub(settings.getLogger()).toReturn(logger);
-        stub(yaml.load(argThat(new IsReaderThatContains(randString)))).toReturn(obj);
+        stub(yaml.load(argThat(new IsReaderThatContains(testString)))).toReturn(obj);
 
         SimpleYamlManager mgr = new SimpleYamlManager("", settings);
         mgr.load(reader);
@@ -424,15 +423,14 @@ public class TestSimpleYamlManager {
 
     @Test
     public void testLoadFromStream() throws UnsupportedEncodingException {
-        byte[] randBytes = new byte[rnd.nextInt(256)];
-        rnd.nextBytes(randBytes);
-        String randString = new String(randBytes, "UTF-8");
-        InputStream stream = new ByteArrayInputStream(randBytes);
+        int randomInt = rnd.nextInt();
+        String testString = "test" + randomInt + "ąęłĸ¶þ→µ";
+        InputStream stream = new ByteArrayInputStream(testString.getBytes("UTF-8"));
         SimpleYamlManager mgr = spy(this.manager);
 
         doNothing().when(mgr).load(isA(Reader.class));
         mgr.load(stream);
-        verify(mgr).load(argThat(new IsReaderThatContains(randString)));
+        verify(mgr).load(argThat(new IsReaderThatContains(testString)));
     }
 
     class IsReaderThatContains extends ArgumentMatcher<Reader> {
