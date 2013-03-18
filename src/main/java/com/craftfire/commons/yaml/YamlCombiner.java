@@ -154,6 +154,9 @@ public class YamlCombiner implements YamlManager {
     @Override
     public void setLoggingManager(LoggingManager loggingManager) {
         this.settings.setLogger(loggingManager);
+        for (YamlManager manager : this.managers) {
+            manager.setLoggingManager(loggingManager);
+        }
     }
 
     /**
