@@ -102,7 +102,7 @@ public class YamlCombiner implements YamlManager {
     public YamlManager getDefaultManager() {
         if (this.defaultManager == null) {
             if (!this.managers.isEmpty()) {
-                this.defaultManager = this.managers.iterator().next();  // TODO: Unreachable?
+                this.defaultManager = this.managers.iterator().next(); // TODO: Unreachable?
             }
         }
         return this.defaultManager;
@@ -194,7 +194,6 @@ public class YamlCombiner implements YamlManager {
      */
     @Override
     public YamlNode setRootNode(YamlNode node) {
-        getDefaultManager();    // Make sure we have one
         this.managers = new HashSet<YamlManager>();
         this.managers.add(this.defaultManager);
         return this.defaultManager.setRootNode(node);
