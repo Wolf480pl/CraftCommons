@@ -11,11 +11,14 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.yaml.snakeyaml.DumperOptions;
 
 public class TestYamlCombiner {
     private YamlCombiner combiner;
@@ -57,22 +60,22 @@ public class TestYamlCombiner {
 
         YamlManager mgr2 = mock(YamlManager.class);
         YamlManager mgr3 = mock(YamlManager.class);
-        Set<YamlManager> set = new HashSet<YamlManager>();
-        set.add(mgr3);
-        set.add(mgr1);
-        set.add(mock(YamlManager.class));
+        List<YamlManager> list = new ArrayList<YamlManager>();
+        list.add(mgr3);
+        list.add(mgr1);
+        list.add(mock(YamlManager.class));
 
-        this.combiner.setYamlManagers(set);
-        assertEquals(set, this.combiner.getYamlManagers());
+        this.combiner.setYamlManagers(list);
+        assertEquals(new HashSet<YamlManager>(list), this.combiner.getYamlManagers());
         assertSame(mgr3, this.combiner.getDefaultManager());
         this.combiner.addYamlManager(mgr1);
-        assertEquals(set, this.combiner.getYamlManagers());
+        assertEquals(new HashSet<YamlManager>(list), this.combiner.getYamlManagers());
         assertTrue(this.combiner.getYamlManagers().contains(mgr1));
         assertSame(mgr3, this.combiner.getDefaultManager());
         this.combiner.addYamlManager(mgr2);
-        assertThat(this.combiner.getYamlManagers(), not(equalTo(set)));
+        assertThat(this.combiner.getYamlManagers(), not(equalTo((Set<YamlManager>) new HashSet<YamlManager>(list))));
         assertTrue(this.combiner.getYamlManagers().contains(mgr2));
-        assertEquals(set.size() + 1, this.combiner.getYamlManagers().size());
+        assertEquals(list.size() + 1, this.combiner.getYamlManagers().size());
         assertSame(mgr3, this.combiner.getDefaultManager());
 
         try {
@@ -86,6 +89,56 @@ public class TestYamlCombiner {
 
     @Test
     public void testSetDefaultManager() {
-        // TODO
+        YamlManager mgr1 = mock(YamlManager.class);
+        YamlManager mgr2 = mock(YamlManager.class);
+
+        try {
+            this.combiner.setDefaultManager(mgr1);
+            fail("Expected an IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+        }
+        assertNull(this.combiner.getDefaultManager());
+
+        List<YamlManager> list = new ArrayList<YamlManager>();
+        list.add(mock(YamlManager.class));
+        list.add(mgr1);
+        list.add(mock(YamlManager.class));
+
+        this.combiner.setYamlManagers(list);
+        this.combiner.setDefaultManager(mgr1);
+        assertSame(mgr1, this.combiner.getDefaultManager());
+
+        try {
+            this.combiner.setDefaultManager(mgr2);
+            fail("Expected an IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+        }
+        assertSame(mgr1, this.combiner.getDefaultManager());
+    }
+
+    @Test
+    public void testGetDefaultSettings() {
+        Settings settings = this.combiner.getDefaultSettings();
+        Settings defaults = new Settings();
+        assertEquals(defaults.getConstructor().getClass(), settings.getConstructor().getClass());
+        assertEquals(defaults.getRepresenter().getClass(), settings.getRepresenter().getClass());
+        compareDumperOptions(defaults.getDumperOptions(), settings.getDumperOptions());
+    }
+
+    private void compareDumperOptions(DumperOptions a, DumperOptions b) {
+        assertEquals(a.getDefaultFlowStyle(), b.getDefaultFlowStyle());
+        assertEquals(a.getDefaultScalarStyle(), b.getDefaultScalarStyle());
+        assertEquals(a.getIndent(), b.getIndent());
+        assertEquals(a.getLineBreak(), b.getLineBreak());
+        assertEquals(a.getTags(), b.getTags());
+        assertEquals(a.getTimeZone(), b.getTimeZone());
+        assertEquals(a.getVersion(), b.getVersion());
+        assertEquals(a.getWidth(), b.getWidth());
+        assertEquals(a.isAllowReadOnlyProperties(), b.isAllowReadOnlyProperties());
+        assertEquals(a.isAllowUnicode(), b.isAllowUnicode());
+        assertEquals(a.isCanonical(), b.isCanonical());
+        assertEquals(a.isExplicitEnd(), b.isExplicitEnd());
+        assertEquals(a.isExplicitStart(), b.isExplicitStart());
+        assertEquals(a.isPrettyFlow(), b.isPrettyFlow());
     }
 }
