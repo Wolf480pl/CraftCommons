@@ -123,6 +123,12 @@ public class TestYamlCombiner {
         assertEquals(defaults.getConstructor().getClass(), settings.getConstructor().getClass());
         assertEquals(defaults.getRepresenter().getClass(), settings.getRepresenter().getClass());
         compareDumperOptions(defaults.getDumperOptions(), settings.getDumperOptions());
+        assertEquals(defaults.getResolver().getClass(), settings.getResolver().getClass());
+        assertEquals(defaults.getLogger().getPrefix(), settings.getLogger().getPrefix());
+        assertSame(defaults.getLogger().getLogger(), settings.getLogger().getLogger());
+        assertEquals(defaults.getSeparator(), settings.getSeparator());
+        assertEquals(defaults.isCaseSensitive(), settings.isCaseSensitive());
+        assertEquals(defaults.isMultiDocument(), settings.isMultiDocument());
     }
 
     private void compareDumperOptions(DumperOptions a, DumperOptions b) {
