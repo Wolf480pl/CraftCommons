@@ -57,7 +57,7 @@ public class YamlNode extends AbstractValueHolder {
      */
     public YamlNode(SimpleYamlManager manager, String name, Object value) {
         if (manager == null) {
-            throw new NullPointerException("manager can't be null");
+            throw new IllegalArgumentException("manager can't be null");
         }
         this.manager = manager;
         this.holder = new ValueHolderBase(normalizePath(name), false, value);
