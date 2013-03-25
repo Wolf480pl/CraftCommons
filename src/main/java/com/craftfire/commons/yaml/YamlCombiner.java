@@ -100,11 +100,11 @@ public class YamlCombiner implements YamlManager {
      * @return the default YamlManager or null
      */
     public YamlManager getDefaultManager() {
-        if (this.defaultManager == null) {
-            if (!this.managers.isEmpty()) {
-                this.defaultManager = this.managers.iterator().next(); // TODO: Unreachable?
-            }
-        }
+        /*if (this.defaultManager == null) {
+             if (!this.managers.isEmpty()) {
+                 this.defaultManager = this.managers.iterator().next(); // TODO: Unreachable?
+             }
+         }*/
         return this.defaultManager;
     }
 
@@ -357,17 +357,17 @@ public class YamlCombiner implements YamlManager {
             getNode(node).setValue(value);
         } else {
             int last = node.lastIndexOf(this.settings.getSeparator());
-            String left = node.substring(last);
-            String found = node.substring(0, last);
+            String left = "";
+            String found = node;
 
-            while (!found.isEmpty()) {
+            while (last >= 0) {
+                left = found.substring(last) + left;
+                found = found.substring(0, last);
                 if (exist(found)) {
-                    getNode(found).getChild(left, true).setValue(value);
+                    getNode(found).getChild(left.substring(1), true).setValue(value);
                     return;
                 }
                 last = found.lastIndexOf(this.settings.getSeparator());
-                left = found.substring(last) + left;
-                found = found.substring(0, last);
             }
             getDefaultManager().setNode(node, value);
         }
@@ -405,7 +405,7 @@ public class YamlCombiner implements YamlManager {
     public boolean save() {
         boolean result = false;
         for (YamlManager manager : this.managers) {
-            result = result || manager.save();
+            result = manager.save() || result;
         }
         return result;
     }
@@ -417,7 +417,7 @@ public class YamlCombiner implements YamlManager {
     public boolean load() {
         boolean result = false;
         for (YamlManager manager : this.managers) {
-            result = result || manager.load();
+            result = manager.load() || result;
         }
         return result;
     }

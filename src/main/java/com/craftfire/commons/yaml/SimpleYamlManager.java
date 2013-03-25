@@ -461,6 +461,7 @@ public class SimpleYamlManager implements YamlManager {
             } catch (IOException e) {
                 getLogger().error("Unable to create file '" + file);
                 getLogger().stackTrace(e);
+                return;
             }
         }
         getLogger().debug("Loading nodes from file '" + file.getAbsoluteFile() + "'.");

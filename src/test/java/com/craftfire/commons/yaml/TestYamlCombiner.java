@@ -9,23 +9,36 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
 import org.yaml.snakeyaml.DumperOptions;
 
 import com.craftfire.commons.util.LoggingManager;
 
 public class TestYamlCombiner {
+    private static Random rnd = new Random();
     private YamlCombiner combiner;
 
     @Before
@@ -251,6 +264,330 @@ public class TestYamlCombiner {
         verify(mgrs.get(0)).exist("cms.is.a.detector.too");
         verify(mgrs.get(1)).exist("cms.is.a.detector.too");
         verify(mgrs.get(2)).exist("cms.is.a.detector.too");
+    }
+
+    @Test
+    public void testGetterDefaults() {
+        boolean randomBool = rnd.nextBoolean();
+        int randomInt = rnd.nextInt();
+        long randomLong = rnd.nextLong();
+        byte[] randomBytes = new byte[8];
+        rnd.nextBytes(randomBytes);
+        String randomString = new String(randomBytes);
+
+        YamlCombiner spy = spy(this.combiner);
+
+        doReturn(randomBool).when(spy).getBoolean("bob.has.no.cat", false);
+        assertEquals(randomBool, spy.getBoolean("bob.has.no.cat"));
+        verify(spy).getBoolean("bob.has.no.cat", false);
+
+        doReturn(randomString).when(spy).getString("bob.has.one.cat", null);
+        assertEquals(randomString, spy.getString("bob.has.one.cat"));
+        verify(spy).getString("bob.has.one.cat", null);
+
+        doReturn(randomInt).when(spy).getInt("bob.has.two.cats", 0);
+        assertEquals(randomInt, spy.getInt("bob.has.two.cats"));
+        verify(spy).getInt("bob.has.two.cats", 0);
+
+        doReturn(randomLong).when(spy).getLong("bob.has.three.cats", 0);
+        assertEquals(randomLong, spy.getLong("bob.has.three.cats"));
+        verify(spy).getLong("bob.has.three.cats", 0);
+    }
+
+    @Test
+    public void testGetBoolean() throws YamlException {
+        boolean random = rnd.nextBoolean();
+        YamlCombiner spy = spy(this.combiner);
+
+        YamlNode node = mock(YamlNode.class);
+        doReturn(node).when(spy).getNode("charlie.has.a.dog");
+        stub(node.getBool(random)).toReturn(true);
+
+        assertTrue(spy.getBoolean("charlie.has.a.dog", random));
+        verify(spy).getNode("charlie.has.a.dog");
+        verify(node).getBool(random);
+
+        doReturn(null).when(spy).getNode("charlie.has.a.cat");
+        assertEquals(random, spy.getBoolean("charlie.has.a.cat", random));
+        verify(spy).getNode("charlie.has.a.cat");
+
+        doThrow(new YamlException()).when(spy).getNode("charlie.has.a.frog");
+        assertEquals(random, spy.getBoolean("charlie.has.a.frog", random));
+        verify(spy).getNode("charlie.has.a.frog");
+    }
+
+    @Test
+    public void testGetString() throws YamlException {
+        byte[] randomBytes = new byte[8];
+        rnd.nextBytes(randomBytes);
+        String random = new String(randomBytes);
+
+        YamlCombiner spy = spy(this.combiner);
+
+        YamlNode node = mock(YamlNode.class);
+        doReturn(node).when(spy).getNode("charlie.has.a.dog");
+        stub(node.getString(random)).toReturn("yes, he has");
+
+        assertEquals("yes, he has", spy.getString("charlie.has.a.dog", random));
+        verify(spy).getNode("charlie.has.a.dog");
+        verify(node).getString(random);
+
+        doReturn(null).when(spy).getNode("charlie.has.a.cat");
+        assertEquals(random, spy.getString("charlie.has.a.cat", random));
+        verify(spy).getNode("charlie.has.a.cat");
+
+        doThrow(new YamlException()).when(spy).getNode("charlie.has.a.frog");
+        assertEquals(random, spy.getString("charlie.has.a.frog", random));
+        verify(spy).getNode("charlie.has.a.frog");
+    }
+
+    @Test
+    public void testGetInt() throws YamlException {
+        int random = rnd.nextInt();
+
+        YamlCombiner spy = spy(this.combiner);
+
+        YamlNode node = mock(YamlNode.class);
+        doReturn(node).when(spy).getNode("charlie.has.a.dog");
+        stub(node.getInt(random)).toReturn(478);
+
+        assertEquals(478, spy.getInt("charlie.has.a.dog", random));
+        verify(spy).getNode("charlie.has.a.dog");
+        verify(node).getInt(random);
+
+        doReturn(null).when(spy).getNode("charlie.has.a.cat");
+        assertEquals(random, spy.getInt("charlie.has.a.cat", random));
+        verify(spy).getNode("charlie.has.a.cat");
+
+        doThrow(new YamlException()).when(spy).getNode("charlie.has.a.frog");
+        assertEquals(random, spy.getInt("charlie.has.a.frog", random));
+        verify(spy).getNode("charlie.has.a.frog");
+    }
+
+    @Test
+    public void testGetLong() throws YamlException {
+        long random = rnd.nextLong();
+
+        YamlCombiner spy = spy(this.combiner);
+
+        YamlNode node = mock(YamlNode.class);
+        doReturn(node).when(spy).getNode("charlie.has.a.dog");
+        stub(node.getLong(random)).toReturn(400700800008007004L);
+
+        assertEquals(400700800008007004L, spy.getLong("charlie.has.a.dog", random));
+        verify(spy).getNode("charlie.has.a.dog");
+        verify(node).getLong(random);
+
+        doReturn(null).when(spy).getNode("charlie.has.a.cat");
+        assertEquals(random, spy.getLong("charlie.has.a.cat", random));
+        verify(spy).getNode("charlie.has.a.cat");
+
+        doThrow(new YamlException()).when(spy).getNode("charlie.has.a.frog");
+        assertEquals(random, spy.getLong("charlie.has.a.frog", random));
+        verify(spy).getNode("charlie.has.a.frog");
+    }
+
+    @Test
+    public void testAddNodes() throws YamlException {
+        List<YamlManager> mgrs = new ArrayList<YamlManager>();
+        YamlManager mgr = mock(YamlManager.class);
+        mgrs.add(mgr);
+        mgrs.add(mock(YamlManager.class));
+        mgrs.add(mock(YamlManager.class));
+        this.combiner.setYamlManagers(mgrs);
+        this.combiner.setDefaultManager(mgr);
+
+        YamlManager mgr1 = mock(YamlManager.class);
+        this.combiner.addNodes(mgr1);
+        verify(mgr).addNodes(mgr1);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> map = mock(Map.class);
+        this.combiner.addNodes(map);
+        verify(mgr).addNodes(map);
+    }
+
+    @Test
+    public void testSetNode() throws YamlException {
+        List<YamlManager> mgrs = new ArrayList<YamlManager>();
+        YamlManager mgr = mock(YamlManager.class);
+        mgrs.add(mgr);
+        mgrs.add(mock(YamlManager.class));
+        mgrs.add(mock(YamlManager.class));
+        this.combiner.setYamlManagers(mgrs);
+        this.combiner.setDefaultManager(mgr);
+
+        YamlCombiner spy = spy(this.combiner);
+        Object testValue = mock(Object.class);
+
+        doReturn(true).when(spy).exist("dante.is.in.trouble");
+        YamlNode node = mock(YamlNode.class);
+        doReturn(node).when(spy).getNode("dante.is.in.trouble");
+
+        spy.setNode("dante.is.in.trouble", testValue);
+        verify(spy).exist("dante.is.in.trouble");
+        verify(spy).getNode("dante.is.in.trouble");
+        verify(node).setValue(testValue);
+
+        YamlNode node1 = mock(YamlNode.class);
+        this.combiner.getDefaultSettings().setSeparator(".");
+        doReturn(false).when(spy).exist("dante.has.no.sword");
+        doReturn(false).when(spy).exist("dante.has.no");
+        doReturn(true).when(spy).exist("dante.has");
+        doReturn(node).when(spy).getNode("dante.has");
+        stub(node.getChild("no.sword", true)).toReturn(node1);
+
+        spy.setNode("dante.has.no.sword", testValue);
+        verify(spy).exist("dante.has.no.sword");
+        verify(spy).exist("dante.has.no");
+        verify(spy).exist("dante.has");
+        verify(spy).getNode("dante.has");
+        verify(node).getChild("no.sword", true);
+        verify(node1).setValue(testValue);
+        verify(mgr, never()).setNode(anyString(), anyObject());
+
+        doReturn(false).when(spy).exist("dante.has.an.axe");
+        doReturn(false).when(spy).exist("dante.has.an");
+        doReturn(false).when(spy).exist("dante.has");
+        doReturn(false).when(spy).exist("dante");
+
+        spy.setNode("dante.has.an.axe", testValue);
+        verify(spy).exist("dante.has.an.axe");
+        verify(spy).exist("dante.has.an");
+        verify(spy, times(2)).exist("dante.has");
+        verify(spy).exist("dante");
+        verify(mgr).setNode("dante.has.an.axe", testValue);
+    }
+
+    @Test
+    public void testGetNode() throws YamlException {
+        List<YamlManager> mgrs = new ArrayList<YamlManager>();
+        mgrs.add(mock(YamlManager.class));
+        mgrs.add(mock(YamlManager.class));
+        mgrs.add(mock(YamlManager.class));
+        this.combiner.setYamlManagers(mgrs);
+
+        stub(mgrs.get(0).exist("eric.wears.a.hat")).toReturn(false);
+        stub(mgrs.get(1).exist("eric.wears.a.hat")).toReturn(true);
+        stub(mgrs.get(2).exist("eric.wears.a.hat")).toReturn(false);
+
+        YamlNode node = mock(YamlNode.class);
+        stub(mgrs.get(1).getNode("eric.wears.a.hat")).toReturn(node);
+
+        assertSame(node, this.combiner.getNode("eric.wears.a.hat"));
+        verify(mgrs.get(1)).exist("eric.wears.a.hat");
+        verify(mgrs.get(1)).getNode("eric.wears.a.hat");
+
+        stub(mgrs.get(0).exist("eric.wears.a.fedora")).toReturn(false);
+        stub(mgrs.get(1).exist("eric.wears.a.fedora")).toReturn(false);
+        stub(mgrs.get(2).exist("eric.wears.a.fedora")).toReturn(false);
+
+        assertNull(this.combiner.getNode("eric.wears.a.fedora"));
+        verify(mgrs.get(0)).exist("eric.wears.a.fedora");
+        verify(mgrs.get(1)).exist("eric.wears.a.fedora");
+        verify(mgrs.get(2)).exist("eric.wears.a.fedora");
+    }
+
+    @Test
+    public void testFinalNodeCount() {
+        List<YamlManager> mgrs = new ArrayList<YamlManager>();
+        mgrs.add(mock(YamlManager.class));
+        mgrs.add(mock(YamlManager.class));
+        mgrs.add(mock(YamlManager.class));
+        this.combiner.setYamlManagers(mgrs);
+
+        stub(mgrs.get(0).getFinalNodeCount()).toReturn(5);
+        stub(mgrs.get(1).getFinalNodeCount()).toReturn(3);
+        stub(mgrs.get(2).getFinalNodeCount()).toReturn(18);
+        assertEquals(5 + 3 + 18, this.combiner.getFinalNodeCount());
+    }
+
+    @Test
+    public void testSave() {
+        List<YamlManager> mgrs = new ArrayList<YamlManager>();
+        mgrs.add(mock(YamlManager.class));
+        mgrs.add(mock(YamlManager.class));
+        mgrs.add(mock(YamlManager.class));
+        this.combiner.setYamlManagers(mgrs);
+
+        stub(mgrs.get(0).save()).toReturn(false);
+        stub(mgrs.get(1).save()).toReturn(true);
+        stub(mgrs.get(2).save()).toReturn(false);
+
+        assertTrue(this.combiner.save());
+        verify(mgrs.get(0)).save();
+        verify(mgrs.get(1)).save();
+        verify(mgrs.get(2)).save();
+    }
+
+    @Test
+    public void testLoad() {
+        List<YamlManager> mgrs = new ArrayList<YamlManager>();
+        mgrs.add(mock(YamlManager.class));
+        mgrs.add(mock(YamlManager.class));
+        mgrs.add(mock(YamlManager.class));
+        this.combiner.setYamlManagers(mgrs);
+
+        stub(mgrs.get(0).load()).toReturn(true);
+        stub(mgrs.get(1).load()).toReturn(false);
+        stub(mgrs.get(2).load()).toReturn(true);
+
+        assertTrue(this.combiner.load());
+        verify(mgrs.get(0)).load();
+        verify(mgrs.get(1)).load();
+        verify(mgrs.get(2)).load();
+    }
+
+    @Test
+    public void testLoadFile() throws IOException {
+        File file = mock(File.class);
+        stub(file.exists()).toReturn(false);
+        doThrow(new IOException()).when(file).createNewFile();
+
+        YamlCombiner spy = spy(this.combiner);
+        spy.load(file);
+        verify(spy).addYamlManager(argThat(new IsSimpleYamlManagerWithFile(file)));
+    }
+
+    @Test
+    public void testLoadResource() throws IOException {
+        String filePath = "testresource.txt";
+
+        YamlCombiner spy = spy(this.combiner);
+        spy.load(filePath);
+        verify(spy).addYamlManager(argThat(new IsSimpleYamlManagerWithResource(filePath)));
+    }
+
+    class IsSimpleYamlManagerWithFile extends ArgumentMatcher<YamlManager> {
+        private final File file;
+
+        public IsSimpleYamlManagerWithFile(File file) {
+            this.file = file;
+        }
+
+        @Override
+        public boolean matches(Object argument) {
+            if (argument instanceof SimpleYamlManager) {
+                return ((SimpleYamlManager) argument).getFiles().contains(this.file);
+            }
+            return false;
+        }
+    }
+
+    class IsSimpleYamlManagerWithResource extends ArgumentMatcher<YamlManager> {
+        private final String resource;
+
+        public IsSimpleYamlManagerWithResource(String resource) {
+            this.resource = resource;
+        }
+
+        @Override
+        public boolean matches(Object argument) {
+            if (argument instanceof SimpleYamlManager) {
+                return ((SimpleYamlManager) argument).getResource().equals(this.resource);
+            }
+            return false;
+        }
     }
 
     private void compareDumperOptions(DumperOptions a, DumperOptions b) {
