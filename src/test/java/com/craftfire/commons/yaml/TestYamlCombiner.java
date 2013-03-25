@@ -10,7 +10,10 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.verify;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -19,6 +22,8 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.yaml.snakeyaml.DumperOptions;
+
+import com.craftfire.commons.util.LoggingManager;
 
 public class TestYamlCombiner {
     private YamlCombiner combiner;
@@ -117,9 +122,10 @@ public class TestYamlCombiner {
     }
 
     @Test
-    public void testGetDefaultSettings() {
+    public void testGetSetDefaultSettings() {
         Settings settings = this.combiner.getDefaultSettings();
         Settings defaults = new Settings();
+        // Make sure they are identical
         assertEquals(defaults.getConstructor().getClass(), settings.getConstructor().getClass());
         assertEquals(defaults.getRepresenter().getClass(), settings.getRepresenter().getClass());
         compareDumperOptions(defaults.getDumperOptions(), settings.getDumperOptions());
@@ -129,6 +135,122 @@ public class TestYamlCombiner {
         assertEquals(defaults.getSeparator(), settings.getSeparator());
         assertEquals(defaults.isCaseSensitive(), settings.isCaseSensitive());
         assertEquals(defaults.isMultiDocument(), settings.isMultiDocument());
+
+        settings = mock(Settings.class);
+        this.combiner.setDefaultSettings(settings);
+        assertSame(settings, this.combiner.getDefaultSettings());
+    }
+
+    @Test
+    public void testGetFiles() {
+        Set<File> set1 = new HashSet<File>();
+        Set<File> set2 = new HashSet<File>();
+        Set<File> set3 = new HashSet<File>();
+
+        File file1 = mock(File.class);
+        set1.add(mock(File.class));
+        set1.add(file1);
+        set1.add(mock(File.class));
+        set2.add(mock(File.class));
+        set3.add(file1);
+        set3.add(mock(File.class));
+
+        List<YamlManager> mgrs = new ArrayList<YamlManager>();
+        mgrs.add(mock(YamlManager.class));
+        mgrs.add(mock(YamlManager.class));
+        mgrs.add(mock(YamlManager.class));
+        stub(mgrs.get(0).getFiles()).toReturn(set1);
+        stub(mgrs.get(1).getFiles()).toReturn(set2);
+        stub(mgrs.get(2).getFiles()).toReturn(set3);
+
+        this.combiner.setYamlManagers(mgrs);
+        Set<File> files = this.combiner.getFiles();
+        assertTrue(files.containsAll(set1));
+        assertTrue(files.containsAll(set2));
+        assertTrue(files.containsAll(set3));
+
+        verify(mgrs.get(0)).getFiles();
+        verify(mgrs.get(1)).getFiles();
+        verify(mgrs.get(2)).getFiles();
+    }
+
+    @Test
+    public void testGetLogger() {
+        Settings settings = mock(Settings.class);
+        LoggingManager mgr = mock(LoggingManager.class);
+        stub(settings.getLogger()).toReturn(mgr);
+
+        this.combiner.setDefaultSettings(settings);
+        assertSame(mgr, this.combiner.getLogger());
+
+        verify(settings).getLogger();
+    }
+
+    @Test
+    public void testSetLoggingManager() {
+        List<YamlManager> mgrs = new ArrayList<YamlManager>();
+        mgrs.add(mock(YamlManager.class));
+        mgrs.add(mock(YamlManager.class));
+        mgrs.add(mock(YamlManager.class));
+        this.combiner.setYamlManagers(mgrs);
+
+        LoggingManager logger = mock(LoggingManager.class);
+        this.combiner.setLoggingManager(logger);
+        assertSame(logger, this.combiner.getDefaultSettings().getLogger());
+
+        verify(mgrs.get(0)).setLoggingManager(logger);
+        verify(mgrs.get(1)).setLoggingManager(logger);
+        verify(mgrs.get(2)).setLoggingManager(logger);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testRootNode() {
+        List<YamlManager> mgrs = new ArrayList<YamlManager>();
+        YamlManager mgr = mock(YamlManager.class);
+        mgrs.add(mgr);
+        mgrs.add(mock(YamlManager.class));
+        mgrs.add(mock(YamlManager.class));
+        this.combiner.setYamlManagers(mgrs);
+        this.combiner.setDefaultManager(mgr);
+
+        YamlNode node = mock(YamlNode.class);
+        stub(mgr.getRootNode()).toReturn(node);
+
+        assertSame(node, this.combiner.getRootNode());
+        verify(mgr).getRootNode();
+
+        YamlNode node1 = mock(YamlNode.class);
+        this.combiner.setRootNode(node1);
+        assertSame(mgr, this.combiner.getDefaultManager());
+        assertEquals(1, this.combiner.getYamlManagers().size());
+        assertTrue(this.combiner.getYamlManagers().contains(mgr));
+        verify(mgr).setRootNode(node1);
+    }
+
+    @Test
+    public void testExist() {
+        List<YamlManager> mgrs = new ArrayList<YamlManager>();
+        mgrs.add(mock(YamlManager.class));
+        mgrs.add(mock(YamlManager.class));
+        mgrs.add(mock(YamlManager.class));
+        this.combiner.setYamlManagers(mgrs);
+
+        stub(mgrs.get(0).exist("atlas.is.a.detector")).toReturn(false);
+        stub(mgrs.get(1).exist("atlas.is.a.detector")).toReturn(true);
+        stub(mgrs.get(2).exist("atlas.is.a.detector")).toReturn(false);
+
+        assertTrue(this.combiner.exist("atlas.is.a.detector"));
+        verify(mgrs.get(1)).exist("atlas.is.a.detector");
+
+        stub(mgrs.get(0).exist("cms.is.a.detector.too")).toReturn(false);
+        stub(mgrs.get(1).exist("cms.is.a.detector.too")).toReturn(false);
+        stub(mgrs.get(2).exist("cms.is.a.detector.too")).toReturn(false);
+
+        assertFalse(this.combiner.exist("cms.is.a.detector.too"));
+        verify(mgrs.get(0)).exist("cms.is.a.detector.too");
+        verify(mgrs.get(1)).exist("cms.is.a.detector.too");
+        verify(mgrs.get(2)).exist("cms.is.a.detector.too");
     }
 
     private void compareDumperOptions(DumperOptions a, DumperOptions b) {

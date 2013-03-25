@@ -182,6 +182,7 @@ public class YamlCombiner implements YamlManager {
      * @see #getDefaultManager()
      */
     @Override
+    @Deprecated
     public YamlNode getRootNode() {
         return this.defaultManager.getRootNode();
     }
