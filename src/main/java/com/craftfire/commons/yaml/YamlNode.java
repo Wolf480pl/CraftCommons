@@ -548,12 +548,6 @@ public class YamlNode extends AbstractValueHolder {
         }
         if (!this.resolved) {
             throw new IllegalStateException("Unresolved node shouldn't have any children!");
-            /*try {
-                getChildrenList(); // This can resolve both Map and List
-            } catch (YamlException e) {
-                this.manager.getLogger().stackTrace(e);
-                return null;
-            }*/
         }
         if (isList()) {
             this.listCache.remove(node);

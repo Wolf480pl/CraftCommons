@@ -27,20 +27,12 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.stub;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -130,6 +122,23 @@ public class TestSimpleYamlManager {
 
         verify(mock0, times(5)).getNode("bob.has.a.dog");
         verify(mock0, times(5)).hasNode("bob.has.a.dog");
+
+        stub(mock0.getNode("bob.has.a.cat")).toThrow(new YamlException());
+        stub(mock0.hasNode("bob.has.a.cat")).toReturn(true);
+        assertEquals(randomBool, this.manager.getBoolean("bob.has.a.cat", randomBool));
+        assertEquals(randomString, this.manager.getString("bob.has.a.cat", randomString));
+        assertEquals(randomInt, this.manager.getInt("bob.has.a.cat", randomInt));
+        assertEquals(randomLong, this.manager.getLong("bob.has.a.cat", randomLong));
+
+        verify(mock0, times(4)).getNode("bob.has.a.cat");
+        verify(mock0, times(4)).hasNode("bob.has.a.cat");
+
+        stub(mock0.hasNode("bob.has.a.cat")).toReturn(false);
+        assertEquals(randomBool, this.manager.getBoolean("bob.has.a.mouse", randomBool));
+        assertEquals(randomString, this.manager.getString("bob.has.a.mouse", randomString));
+        assertEquals(randomInt, this.manager.getInt("bob.has.a.mouse", randomInt));
+        assertEquals(randomLong, this.manager.getLong("bob.has.a.mouse", randomLong));
+        verify(mock0, times(4)).hasNode("bob.has.a.mouse");
 
         YamlManager mgrMock = mock(YamlManager.class);
         stub(mgrMock.getRootNode()).toReturn(mock1);
@@ -499,6 +508,12 @@ public class TestSimpleYamlManager {
         verify(file1).mkdirs();
         verify(file, times(2)).createNewFile();
         verify(mgr).load(argThat(new IsStreamThatContains(fileContent.getBytes("UTF-8"))));
+
+        stub(file.createNewFile()).toThrow(new IOException());
+        stub(file.getParentFile()).toReturn(null);
+        mgr.load(file);
+        verify(file, times(3)).createNewFile();
+        verify(mgr, times(3)).load((InputStream) anyObject());
     }
 
     class IsReaderThatContains extends ArgumentMatcher<Reader> {

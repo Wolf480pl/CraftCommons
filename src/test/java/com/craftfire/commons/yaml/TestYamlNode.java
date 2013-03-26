@@ -167,6 +167,9 @@ public class TestYamlNode {
         assertTrue(this.listNode.isList());
         assertFalse(this.listNode.isScalar());
 
+        assertEquals(ValueType.UNKNOWN, this.mapNode.getType());
+        assertEquals(ValueType.UNKNOWN, this.listNode.getType());
+
         assertFalse(this.scalarNode.isResolved());
 
         assertFalse(this.scalarNode.isMap());
@@ -604,6 +607,11 @@ public class TestYamlNode {
         doReturn(list).when(listSpy).dump();
         assertEquals(list, listSpy.getList());
         verify(listSpy).dump();
+
+        YamlNode scalarSpy = spy(this.scalarNode);
+        assertNull(scalarSpy.getMap());
+        assertNull(scalarSpy.getList());
+        verify(scalarSpy, never()).dump();
     }
 
     @Test
@@ -714,5 +722,15 @@ public class TestYamlNode {
         assertEquals(randomBool, this.nullNode.isNull());
         stub(holderMock.isUnsigned()).toReturn(!randomBool);
         assertEquals(!randomBool, this.nullNode.isUnsigned());
+    }
+
+    @Test
+    public void testConstructor() {
+        try {
+            new YamlNode((SimpleYamlManager) null, "test", 18);
+            fail("Expected an IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+
+        }
     }
 }

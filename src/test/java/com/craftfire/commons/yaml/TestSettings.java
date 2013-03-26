@@ -24,6 +24,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 import java.lang.reflect.Field;
@@ -60,6 +61,12 @@ public class TestSettings {
         logger = mock(LoggingManager.class);
         assertSame(this.settings, this.settings.setLogger(logger));
         assertSame(logger, this.settings.getLogger());
+
+        try {
+            this.settings.setLogger(null);
+            fail("Expected an IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+        }
     }
 
     @Test
