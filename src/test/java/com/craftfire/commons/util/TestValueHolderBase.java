@@ -107,13 +107,14 @@ public class TestValueHolderBase {
 
     @Test
     public void testBlob() throws SerialException, SQLException {
-        ValueHolderBase holder = new ValueHolderBase(ValueType.BLOB, new SerialBlob(new byte[] { 0, 1, 77, -3 }));
+        ValueHolderBase holder = new ValueHolderBase(ValueType.BLOB, new SerialBlob(new byte[] { 0, 1, 77, -3, 8, -14, 5, -76, 102 }));
         assertEquals(ValueType.BLOB, holder.getType());
-        assertArrayEquals(new byte[] { 0, 1, 77, -3 }, ((Blob) holder.getValue()).getBytes(1, 4));
-        assertEquals(new String(new byte[] { 0, 1, 77, -3 }), holder.getString());
+        assertArrayEquals(new byte[] { 0, 1, 77, -3, 8, -14, 5, -76, 102 }, ((Blob) holder.getValue()).getBytes(1, 4));
+        assertEquals(new String(new byte[] { 0, 1, 77, -3, 8, -14, 5, -76, 102 }), holder.getString());
         assertEquals(85501, holder.getInt());
         assertEquals(85501, holder.getLong());
         assertEquals(BigInteger.valueOf(85501), holder.getBigInt());
+        // probably should be 1.81432836272150403858194269574E-309
         assertEquals(85501, holder.getDouble(), 0);
         assertEquals(85501, holder.getFloat(), 0);
         assertArrayEquals(new byte[] { 0, 1, 77, -3 }, holder.getBytes());

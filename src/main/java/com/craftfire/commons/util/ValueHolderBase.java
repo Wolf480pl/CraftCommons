@@ -238,6 +238,17 @@ public class ValueHolderBase extends AbstractValueHolder {
      */
     @Override
     public int getInt(int defaultValue) {
+        if (getType() == ValueType.BINARY || getType() == ValueType.BLOB) {
+            byte[] bytes = { 0, 0, 0, 0 };
+            byte[] bytes1 = getBytes();
+            if (bytes1.length >= 4) {
+                System.arraycopy(bytes1, 0, bytes, 0, 4);
+            } else {
+                System.arraycopy(bytes1, 0, bytes, 4 - bytes1.length, bytes1.length);
+            }
+            return ByteBuffer.wrap(bytes).getInt();
+
+        }
         return (int) getLong(defaultValue);
     }
 
@@ -330,7 +341,7 @@ public class ValueHolderBase extends AbstractValueHolder {
                 System.arraycopy(bytes1, 0, bytes, 8 - bytes1.length,
                         bytes1.length);
             }
-            return ByteBuffer.wrap(bytes).getLong();
+            return ByteBuffer.wrap(bytes).getDouble();
         } else if (getType().equals(ValueType.STRING)) {
             try {
                 return Double.parseDouble((String) this.value);
@@ -351,6 +362,17 @@ public class ValueHolderBase extends AbstractValueHolder {
      */
     @Override
     public float getFloat(float defaultValue) {
+        if (getType() == ValueType.BINARY || getType() == ValueType.BLOB) {
+            byte[] bytes = { 0, 0, 0, 0 };
+            byte[] bytes1 = getBytes();
+            if (bytes1.length >= 4) {
+                System.arraycopy(bytes1, 0, bytes, 0, 4);
+            } else {
+                System.arraycopy(bytes1, 0, bytes, 4 - bytes1.length, bytes1.length);
+            }
+            return ByteBuffer.wrap(bytes).getFloat();
+
+        }
         return (float) getDouble(defaultValue);
     }
 
