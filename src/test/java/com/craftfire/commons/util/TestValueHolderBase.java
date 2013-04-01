@@ -23,13 +23,17 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Blob;
 import java.sql.SQLException;
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -91,16 +95,16 @@ public class TestValueHolderBase {
 
     @Test
     public void testBinary() {
-        ValueHolderBase holder = new ValueHolderBase(ValueType.BINARY, new byte[] { 0, 1, 77, -3 });
+        ValueHolderBase holder = new ValueHolderBase(ValueType.BINARY, new byte[] { 1, 77, -3 });
         assertEquals(ValueType.BINARY, holder.getType());
-        assertArrayEquals(new byte[] { 0, 1, 77, -3 }, (byte[]) holder.getValue());
-        assertEquals(new String(new byte[] { 0, 1, 77, -3 }), holder.getString());
+        assertArrayEquals(new byte[] { 1, 77, -3 }, (byte[]) holder.getValue());
+        assertEquals(new String(new byte[] { 1, 77, -3 }), holder.getString());
         assertEquals(85501, holder.getInt());
         assertEquals(85501, holder.getLong());
         assertEquals(BigInteger.valueOf(85501), holder.getBigInt());
-        assertEquals(85501, holder.getDouble(), 0);
-        assertEquals(85501, holder.getFloat(), 0);
-        assertArrayEquals(new byte[] { 0, 1, 77, -3 }, holder.getBytes());
+        assertEquals(4.2243106785072420773640808359E-319, holder.getDouble(), 0);
+        assertEquals(1.19812419998236184381049803101E-40, holder.getFloat(), 0);
+        assertArrayEquals(new byte[] { 1, 77, -3 }, holder.getBytes());
         assertTrue(holder.getBool());
         assertFalse(holder.isNull());
     }
@@ -109,16 +113,15 @@ public class TestValueHolderBase {
     public void testBlob() throws SerialException, SQLException {
         ValueHolderBase holder = new ValueHolderBase(ValueType.BLOB, new SerialBlob(new byte[] { 0, 1, 77, -3, 8, -14, 5, -76, 102 }));
         assertEquals(ValueType.BLOB, holder.getType());
-        assertArrayEquals(new byte[] { 0, 1, 77, -3, 8, -14, 5, -76, 102 }, ((Blob) holder.getValue()).getBytes(1, 4));
+        assertArrayEquals(new byte[] { 0, 1, 77, -3, 8, -14, 5, -76, 102 }, ((Blob) holder.getValue()).getBytes(1, 9));
         assertEquals(new String(new byte[] { 0, 1, 77, -3, 8, -14, 5, -76, 102 }), holder.getString());
-        assertEquals(85501, holder.getInt());
-        assertEquals(85501, holder.getLong());
-        assertEquals(BigInteger.valueOf(85501), holder.getBigInt());
-        // probably should be 1.81432836272150403858194269574E-309
-        assertEquals(85501, holder.getDouble(), 0);
-        assertEquals(85501, holder.getFloat(), 0);
-        assertArrayEquals(new byte[] { 0, 1, 77, -3 }, holder.getBytes());
-        assertArrayEquals(new byte[] { 0, 1, 77, -3 }, holder.getBlob().getBytes(1, 4));
+        assertEquals(-234507162, holder.getInt());
+        assertEquals(94009382106674278L, holder.getLong());
+        assertEquals(BigInteger.valueOf(94009382106674278L), holder.getBigInt());
+        assertEquals(2.18649212959259492544895369281E-302, holder.getDouble(), 0);
+        assertEquals(-2.64829405664964992612190650368E30, holder.getFloat(), 0);
+        assertArrayEquals(new byte[] { 0, 1, 77, -3, 8, -14, 5, -76, 102 }, holder.getBytes());
+        assertArrayEquals(new byte[] { 0, 1, 77, -3, 8, -14, 5, -76, 102 }, holder.getBlob().getBytes(1, 9));
         assertTrue(holder.getBool());
         assertFalse(holder.isNull());
     }
@@ -137,6 +140,20 @@ public class TestValueHolderBase {
         assertEquals(BigDecimal.ONE, holder.getDecimal());
         assertArrayEquals(new byte[] { 1 }, holder.getBytes());
         assertTrue(holder.getBool());
+        assertFalse(holder.isNull());
+
+        holder = new ValueHolderBase(ValueType.BOOLEAN, false);
+        assertEquals(ValueType.BOOLEAN, holder.getType());
+        assertEquals(false, holder.getValue());
+        assertEquals("false", holder.getString());
+        assertEquals(0, holder.getInt());
+        assertEquals(0, holder.getLong());
+        assertEquals(BigInteger.ZERO, holder.getBigInt());
+        assertEquals(0, holder.getDouble(), 0);
+        assertEquals(0, holder.getFloat(), 0);
+        assertEquals(BigDecimal.ZERO, holder.getDecimal());
+        assertArrayEquals(new byte[] { 0 }, holder.getBytes());
+        assertFalse(holder.getBool());
         assertFalse(holder.isNull());
     }
 
@@ -177,6 +194,13 @@ public class TestValueHolderBase {
     }
 
     @Test
+    public void testBigInt() {
+        BigInteger bint = BigInteger.valueOf(18798767);
+        ValueHolderBase holder = new ValueHolderBase(ValueType.INTEGER, bint);
+        assertSame(bint, holder.getBigInt());
+    }
+
+    @Test
     public void testNull() {
         ValueHolderBase holder = new ValueHolderBase(ValueType.NULL, null);
         assertEquals(ValueType.NULL, holder.getType());
@@ -202,6 +226,14 @@ public class TestValueHolderBase {
     }
 
     @Test
+    public void testDecimal() {
+        BigDecimal dec = BigDecimal.valueOf(18798767.05);
+        ValueHolderBase holder = new ValueHolderBase(ValueType.REAL, dec);
+        assertSame(dec, holder.getDecimal());
+
+    }
+
+    @Test
     public void testString() {
         ValueHolderBase holder = new ValueHolderBase(ValueType.STRING, "14");
         assertEquals(ValueType.STRING, holder.getType());
@@ -214,8 +246,44 @@ public class TestValueHolderBase {
         assertEquals(14, holder.getDouble(), 0);
         assertEquals(BigDecimal.valueOf(14), holder.getDecimal());
         assertArrayEquals("14".getBytes(), holder.getBytes());
+        Date defDate = new Date(1789879);
+        assertEquals(defDate, holder.getDate(defDate));
         assertTrue(holder.getBool());
         assertFalse(holder.isNull());
+    }
+
+    @Test
+    public void testDateFormats() {
+        Date now = new Date();
+        Calendar cal1 = Calendar.getInstance();
+        cal1.setTime(now);
+        Calendar cal2 = Calendar.getInstance();
+
+        ValueHolderBase holder = new ValueHolderBase(ValueType.STRING, DateFormat.getDateInstance().format(now));
+        cal2.setTime(holder.getDate());
+        assertEquals(cal1.get(Calendar.YEAR), cal2.get(Calendar.YEAR));
+        assertEquals(cal1.get(Calendar.DAY_OF_YEAR), cal2.get(Calendar.DAY_OF_YEAR));
+
+        holder = new ValueHolderBase(ValueType.STRING, DateFormat.getDateTimeInstance().format(now));
+        cal2.setTime(holder.getDate());
+        assertEquals(cal1.get(Calendar.YEAR), cal2.get(Calendar.YEAR));
+        assertEquals(cal1.get(Calendar.DAY_OF_YEAR), cal2.get(Calendar.DAY_OF_YEAR));
+        assertEquals(cal1.get(Calendar.HOUR_OF_DAY), cal2.get(Calendar.HOUR_OF_DAY));
+        assertEquals(cal1.get(Calendar.MINUTE), cal2.get(Calendar.MINUTE));
+        assertEquals(cal1.get(Calendar.SECOND), cal2.get(Calendar.SECOND));
+
+        holder = new ValueHolderBase(ValueType.STRING, DateFormat.getTimeInstance().format(now));
+        cal2.setTime(holder.getDate());
+        assertEquals(cal1.get(Calendar.HOUR_OF_DAY), cal2.get(Calendar.HOUR_OF_DAY));
+        assertEquals(cal1.get(Calendar.MINUTE), cal2.get(Calendar.MINUTE));
+        assertEquals(cal1.get(Calendar.SECOND), cal2.get(Calendar.SECOND));
+
+        holder = new ValueHolderBase(ValueType.STRING, DateFormat.getInstance().format(now));
+        cal2.setTime(holder.getDate());
+        assertEquals(cal1.get(Calendar.YEAR), cal2.get(Calendar.YEAR));
+        assertEquals(cal1.get(Calendar.DAY_OF_YEAR), cal2.get(Calendar.DAY_OF_YEAR));
+        assertEquals(cal1.get(Calendar.HOUR_OF_DAY), cal2.get(Calendar.HOUR_OF_DAY));
+        assertEquals(cal1.get(Calendar.MINUTE), cal2.get(Calendar.MINUTE));
     }
 
     @Test
@@ -241,7 +309,7 @@ public class TestValueHolderBase {
     }
 
     @Test
-    public void testDefaults() {
+    public void testDefaults() throws SerialException, SQLException {
         ValueHolderBase holder = new ValueHolderBase(null);
         Random rnd = new Random();
         long randomLong = rnd.nextLong();
@@ -258,8 +326,62 @@ public class TestValueHolderBase {
         assertEquals(randomDouble, holder.getDouble(randomDouble), 0);
         assertEquals(BigDecimal.valueOf(randomDouble), holder.getDecimal(BigDecimal.valueOf(randomDouble)));
         assertArrayEquals(randomBytes, holder.getBytes(randomBytes));
+        Blob randomBlob = new SerialBlob(randomBytes);
+        assertSame(randomBlob, holder.getBlob(randomBlob));
         assertTrue(holder.getBool(true));
         assertFalse(holder.getBool(false));
+    }
+
+    @Test
+    public void testToString() {
+        ValueHolderBase holder = new ValueHolderBase("ajjhus");
+        String string = holder.toString();
+        assertTrue(string.contains(String.valueOf(holder.getValue())));
+        assertTrue(string.contains(holder.getName()));
+    }
+
+    @Test
+    public void testTypeCheck() {
+        try {
+            new ValueHolderBase(ValueType.STRING, 9);
+            fail("Expected an IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+        }
+        try {
+            new ValueHolderBase(ValueType.INTEGER, "abc");
+            fail("Expected an IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+        }
+        try {
+            new ValueHolderBase(ValueType.REAL, "abc");
+            fail("Expected an IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+        }
+        try {
+            new ValueHolderBase(ValueType.INTEGER, 10.5);
+            fail("Expected an IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+        }
+        try {
+            new ValueHolderBase(ValueType.DATE, 9);
+            fail("Expected an IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+        }
+        try {
+            new ValueHolderBase(ValueType.BLOB, 9);
+            fail("Expected an IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+        }
+        try {
+            new ValueHolderBase(ValueType.BINARY, 9);
+            fail("Expected an IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+        }
+        try {
+            new ValueHolderBase(ValueType.BOOLEAN, 9);
+            fail("Expected an IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+        }
     }
 
 }
