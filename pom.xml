@@ -5,7 +5,7 @@
     <name>CraftCommons</name>
     <groupId>com.craftfire</groupId>
     <artifactId>commons</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.2-SNAPSHOT</version>
     <url>http://www.craftfire.com</url>
     <inceptionYear>2011</inceptionYear>
     <description>Commons library by CraftFire which features a data source manager, encryption methods, and more.</description>
