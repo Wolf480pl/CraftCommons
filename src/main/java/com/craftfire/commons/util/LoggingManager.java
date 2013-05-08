@@ -27,6 +27,7 @@ import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -217,13 +218,23 @@ public class LoggingManager {
     }
 
     public void advancedWarning(String message) {
-        warning(newline
-                + "|-----------------------------------------------------------------------------|"
-                + newline
-                + "|---------------------------------- WARNING ----------------------------------|"
-                + newline
-                + "|-----------------------------------------------------------------------------|"
-                + ((message != null) ? (newline + message) : ""), false);
+        warning(newline + advancedBox("WARNING") + ((message != null) ? (newline + message) : ""), false);
+    }
+
+    protected String advancedBox(String title) {
+        if ((title.length() & 1) == 0) {
+            title = title + " ";
+        }
+        int dashNum = (77 - title.length() - 2) / 2;
+        char[] chars = new char[dashNum];
+        Arrays.fill(chars, '-');
+        String dashes = new String(chars);
+        return  "|-----------------------------------------------------------------------------|"
+        + newline
+        + "|" + dashes + " " + title + " " + dashes + "|"
+        + newline
+        + "|-----------------------------------------------------------------------------|"
+        + newline;
     }
 
     public void stackTrace(final Throwable e) {
@@ -236,25 +247,31 @@ public class LoggingManager {
     }
 
     public void stackTrace(final Throwable e, List<String> extra) {
-        advancedWarning();
+        stackTrace(Type.WARNING, e, extra);
+    }
+
+    public void stackTrace(Type type, final Throwable e, List<String> extra) {
+        String box = advancedBox(type.name().toUpperCase());
         if (this.stackTraces) {
-            this.logger.log(Level.WARNING, formatExtra(extra), e);
+            this.logger.log(type.getLevel(), box + formatExtra(extra), e);
         } else {
-            warning("Class name: " + e.getStackTrace()[1].getClassName(), false);
-            warning("Error message: " + e.getMessage(), false);
-            warning("Error cause: " + e.getCause(), false);
-            warning("File name: " + e.getStackTrace()[1].getFileName(), false);
-            warning("Function name: " + e.getStackTrace()[1].getMethodName(), false);
-            warning("Error line: " + e.getStackTrace()[1].getLineNumber(), false);
+            StringBuilder builder = new StringBuilder();
+            builder.append("Class name: " + e.getStackTrace()[1].getClassName());
+            builder.append("Error message: " + e.getMessage());
+            builder.append("Error cause: " + e.getCause());
+            builder.append("File name: " + e.getStackTrace()[1].getFileName());
+            builder.append("Function name: " + e.getStackTrace()[1].getMethodName());
+            builder.append("Error line: " + e.getStackTrace()[1].getLineNumber());
             if (isLogging()) {
                 DateFormat logFormat = new SimpleDateFormat(this.format);
                 Date date = new Date();
-                warning("Check log file: " + this.directory + "error" + File.separator
-                        + logFormat.format(date) + "-error.log", false);
+                builder.append("Check log file: " + this.directory + "error" + File.separator + logFormat.format(date) + "-" + type.getFilename() + ".log");
             } else {
-                warning("Enable logging in the config to get more information about the error.", false);
+                builder.append("Enable logging in the config to get more information about the error.");
             }
+            log(type, false, true, builder.toString(), null);
         }
+        // TODO: Add level below
         logError("--------------------------- STACKTRACE ERROR ---------------------------");
         logError("Class name: " + e.getStackTrace()[1].getClassName());
         logError("Error message: " + e.getMessage());
