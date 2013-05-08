@@ -26,8 +26,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,7 +48,10 @@ public class LoggingManager {
     }
 
     public static enum Type {
-        INFO(Level.INFO, "info"), ERROR(Level.SEVERE, "errors"), DEBUG(debugLevel, "debug"), WARNING(Level.WARNING, "warnings");
+        INFO(Level.INFO, "info"),
+        ERROR(Level.SEVERE, "errors"),
+        DEBUG(debugLevel, "debug"),
+        WARNING(Level.WARNING, "warnings");
         private static Map<Level, Type> byLevel = new HashMap<Level, Type>();
         private final Level level;
         private final String name;
@@ -122,12 +127,12 @@ public class LoggingManager {
         this.logging = (this.directory != null) && (!this.directory.isEmpty()) && logging;
     }
 
-    public boolean isPrintStackTraces() {
+    public boolean isShowFullStackTraces() {
         return this.stackTraces;
     }
 
-    public void setPrintStackTraces(boolean printStackTraces) {
-        this.stackTraces = printStackTraces;
+    public void setShowFullStackTraces(boolean fullStackTraces) {
+        this.stackTraces = fullStackTraces;
     }
 
     public String getFormat() {
@@ -147,12 +152,7 @@ public class LoggingManager {
     }
 
     public void info(String line, boolean toFile, boolean toConsole) {
-        if (toConsole) {
-            this.logger.info(this.prefix + " " + line);
-        }
-        if (toFile) {
-            toFile(Type.INFO, line);
-        }
+        log(Type.INFO, toFile, toConsole, line, null);
     }
 
     public void warning(String line) {
@@ -227,13 +227,18 @@ public class LoggingManager {
     }
 
     public void stackTrace(final Throwable e) {
-        stackTrace(e, null);
+        stackTrace(e, (List<String>) null);
     }
 
+    @Deprecated
     public void stackTrace(final Throwable e, Map<Integer, String> extra) {
+        stackTrace(e, new ArrayList<String>(extra.values()));
+    }
+
+    public void stackTrace(final Throwable e, List<String> extra) {
         advancedWarning();
         if (this.stackTraces) {
-            this.logger.log(Level.WARNING, "", e);
+            this.logger.log(Level.WARNING, formatExtra(extra), e);
         } else {
             warning("Class name: " + e.getStackTrace()[1].getClassName(), false);
             warning("Error message: " + e.getMessage(), false);
@@ -258,8 +263,8 @@ public class LoggingManager {
         logError("Function name: " + e.getStackTrace()[1].getMethodName());
         logError("Error line: " + e.getStackTrace()[1].getLineNumber());
         if (extra != null) {
-            for (int id : extra.keySet()) {
-                logError(extra.get(id));
+            for (String str : extra) {
+                logError(str);
             }
         }
         logError("--------------------------- STACKTRACE START ---------------------------");
@@ -278,15 +283,26 @@ public class LoggingManager {
             this.logger.log(type.getLevel(), message, t);
         }
         if (toFile) {
-
+            toFile(type, message, t);
         }
+    }
+
+    protected String formatExtra(List<String> extra) {
+        if (extra == null) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder();
+        for (String str : extra) {
+            builder.append(str);
+        }
+        return builder.toString();
     }
 
     private void toFile(Type type, String line) {
         toFile(type, line, null);
     }
 
-    private void toFile(Type type, String line, Throwable t) {
+    private void toFile(Type type, String message, Throwable t) {
         if (!this.logging) {
             return;
         }
@@ -301,13 +317,13 @@ public class LoggingManager {
         Date date = new Date();
 
         if (isCombinedLogging()) {
-            toFile(type, line, t, date, dir, "combined", logFormat.format(date) + "-combined.log");
+            toFile(type, message, t, date, dir, "combined", logFormat.format(date) + "-combined.log");
         }
 
-        toFile(type, line, t, date, dir, type.getFilename(), logFormat.format(date) + "-" + type.getFilename() + ".log");
+        toFile(type, message, t, date, dir, type.getFilename(), logFormat.format(date) + "-" + type.getFilename() + ".log");
     }
 
-    private void toFile(Type type, String line, Throwable throwable, Date date, File dir, String subdirectory, String fileName) {
+    private void toFile(Type type, String message, Throwable throwable, Date date, File dir, String subdirectory, String fileName) {
         File subDir = new File(dir, subdirectory);
         if (!subDir.exists()) {
             if (subDir.mkdir()) {
@@ -327,8 +343,10 @@ public class LoggingManager {
         try {
             DateFormat stringFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
             PrintWriter print = new PrintWriter(new BufferedWriter(new FileWriter(file, true)));
-            print.write(stringFormat.format(date) + " - " + type.toString().toUpperCase() + " - " + line + newline);
-            throwable.printStackTrace(print);
+            print.write(stringFormat.format(date) + " - " + type.toString().toUpperCase() + " - " + message + newline);
+            if (throwable != null) {
+                throwable.printStackTrace(print);
+            }
             print.close();
         } catch (IOException e) {
             stackTrace(e);  // TODO: Make sure we don't get an infinite recursion
