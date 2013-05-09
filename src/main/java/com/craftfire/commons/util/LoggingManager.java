@@ -158,7 +158,7 @@ public class LoggingManager {
     }
 
     public void info(String line, boolean toFile, boolean toConsole) {
-        log(Type.INFO, toFile, toConsole, line, null);
+        log(Type.INFO, toFile, toConsole, line);
     }
 
     public void warning(String line) {
@@ -170,12 +170,7 @@ public class LoggingManager {
     }
 
     public void warning(String line, boolean toFile, boolean toConsole) {
-        if (toConsole) {
-            this.logger.warning(this.prefix + " " + line);
-        }
-        if (toFile) {
-            toFile(Type.WARNING, line);
-        }
+        log(Type.WARNING, toFile, toConsole, line);
     }
 
     public void severe(String line) {
@@ -187,12 +182,7 @@ public class LoggingManager {
     }
 
     public void severe(String line, boolean toFile, boolean toConsole) {
-        if (toConsole) {
-            this.logger.severe(this.prefix + " " + line);
-        }
-        if (toFile) {
-            toFile(Type.ERROR, line);
-        }
+        log(Type.ERROR, toFile, toConsole, line);
     }
 
     public void debug(String line) {
@@ -205,12 +195,7 @@ public class LoggingManager {
 
     public void debug(String line, boolean toFile, boolean toConsole) {
         if (isDebug()) {
-            if (toConsole) {
-                this.logger.log(debugLevel, this.prefix + " " + line);
-            }
-            if (toFile) {
-                toFile(Type.DEBUG, line);
-            }
+            log(Type.DEBUG, toFile, toConsole, line);
         }
     }
 
@@ -294,8 +279,13 @@ public class LoggingManager {
         toFile(type, "---------------------------- STACKTRACE END ----------------------------");
     }
 
+    @Deprecated
     public void logError(String error) {
         toFile(Type.ERROR, error);
+    }
+
+    public void log(Type type, boolean toFile, boolean toConsole, String message) {
+        log(type, toFile, toConsole, message, null);
     }
 
     public void log(Type type, boolean toFile, boolean toConsole, String message, Throwable t) {
@@ -324,11 +314,11 @@ public class LoggingManager {
         return builder.toString();
     }
 
-    private void toFile(Type type, String line) {
+    protected void toFile(Type type, String line) {
         toFile(type, line, null);
     }
 
-    private void toFile(Type type, String message, Throwable t) {
+    protected void toFile(Type type, String message, Throwable t) {
         if (!this.logging) {
             return;
         }
@@ -348,7 +338,7 @@ public class LoggingManager {
         toFile(type, message, t, date, this.dir, type.getFilename(), logFormat.format(date) + "-" + type.getFilename() + ".log");
     }
 
-    private void toFile(Type type, String message, Throwable throwable, Date date, File dir, String subdirectory, String fileName) {
+    protected void toFile(Type type, String message, Throwable throwable, Date date, File dir, String subdirectory, String fileName) {
         PrintWriter print;
         if (this.writers.containsKey(subdirectory)) {
             print = this.writers.get(subdirectory);
